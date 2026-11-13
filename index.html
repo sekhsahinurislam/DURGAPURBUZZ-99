@@ -87,7 +87,27 @@ function applySettings(){let s=siteSettings;document.getElementById("siteName").
 function filterCategory(cat){activeCategory=cat;let list=allNews.filter(n=>n.status==="published"&&(cat==="all"||n.category===cat));document.getElementById("listingTitle").textContent=cat==="all"?t("latest"):cat;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">${t("empty")}</div>`;showView("listingView");window.scrollTo(0,0)}
 function runSearch(){let q=document.getElementById("searchInput").value.trim().toLowerCase();let list=allNews.filter(n=>n.status==="published"&&[n.titleBn,n.titleEn,n.titleHi,n.excerptBn,n.bodyBn,n.category].join(" ").toLowerCase().includes(q));document.getElementById("listingTitle").textContent="Search: "+q;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">কোনো খবর পাওয়া যায়নি।</div>`;showView("listingView")}
 function openArticle(id){let n=allNews.find(x=>x.id===id);if(!n)return;let video=validUrl(n.videoUrl);document.getElementById("articleView").innerHTML=`<article class="article-box"><span class="category">${safe(n.category||"News")}</span><h1>${safe(textFor(n,"title"))}</h1><div class="meta">${dateText(n.createdAt)} · DURGAPUR BUZZ</div><img class="article-cover" src="${safe(validUrl(n.imageUrl)||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div class="article-body">${safe(textFor(n,"body")||textFor(n,"excerpt"))}</div>${video?`<p><a class="btn" href="${safe(video)}" target="_blank" rel="noopener">ভিডিও দেখুন</a></p>`:""}<hr style="border:0;border-top:1px solid var(--line);margin:25px 0"><button class="btn ghost" onclick="goHome()">← ${t("home")}</button></article>`;showView("articleView");window.scrollTo(0,0);location.hash="news-"+id}
-async function loadData(){try{let [newsSnap,settingsSnap]=await Promise.all([db.collection("news").where("status","==","published").get(),db.collection("site").doc("settings").get({source:"server"})]);allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));if(settingsSnap.exists)siteSettings=settingsSnap.data();renderAll()}catch(e){console.error(e);document.getElementById("heroGrid").innerHTML=`<div class="notice" style="grid-column:1/-1">Firebase সংযোগ হয়নি। Firestore Database তৈরি করুন এবং Rules Publish করুন। ${safe(e.message)}</div>`;renderAll()}}
+async function loadData(){
+ let settingsError=null,newsError=null;
+ // Load site settings independently so a news-query error cannot hide the saved logo.
+ try{
+  const settingsSnap=await db.collection("site").doc("settings").get({source:"server"});
+  if(settingsSnap.exists){siteSettings=settingsSnap.data()||{};}
+  else{siteSettings={};}
+ }catch(e){settingsError=e;console.error("Website settings load failed:",e);}
+ try{
+  const newsSnap=await db.collection("news").where("status","==","published").get();
+  allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));
+ }catch(e){newsError=e;console.error("News load failed:",e);}
+ renderAll();
+ if(settingsError||newsError){
+  const messages=[];
+  if(settingsError)messages.push("Website Settings: "+settingsError.message);
+  if(newsError)messages.push("News: "+newsError.message);
+  const notice=document.createElement("div");notice.className="notice";notice.style.margin="12px auto";notice.style.maxWidth="1180px";notice.textContent="কিছু Firebase তথ্য লোড করা যায়নি: "+messages.join(" | ");
+  const page=document.querySelector("main")||document.body;page.prepend(notice);
+ }
+}
 function openAdmin(){toggleMenu(false);if(currentUser&&currentUser.uid===ADMIN_UID){openAdminPanel()}else openModal("loginModal")}
 async function loginAdmin(){let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;document.getElementById("loginError").textContent="";try{let cred=await auth.signInWithEmailAndPassword(email,password);if(cred.user.uid!==ADMIN_UID){await auth.signOut();throw new Error("এই অ্যাকাউন্টটি Super Admin নয়। UID মিলছে না।")}closeModal("loginModal");openAdminPanel()}catch(e){document.getElementById("loginError").textContent=e.message}}
 auth.onAuthStateChanged(user=>{currentUser=user;if(user&&user.uid!==ADMIN_UID)auth.signOut()});

@@ -59,13 +59,25 @@
 <div class="form-grid"><div class="field"><label>Website Name</label><input id="settingName"></div><div class="field"><label>Tagline</label><input id="settingTagline"></div><div class="field"><label>Logo Image URL</label><input id="settingLogo" placeholder="https://...png"></div><div class="field"><label>Contact Email</label><input id="settingEmail"></div><div class="field"><label>Instagram URL</label><input id="settingInstagram"></div><div class="field"><label>Facebook URL</label><input id="settingFacebook"></div><div class="field"><label>YouTube URL</label><input id="settingYoutube"></div><div class="field"><label>About Website</label><textarea id="settingAbout"></textarea></div></div><button class="btn" onclick="saveSettings()">Save Website Settings</button></div></div>
 </div></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" onerror="document.getElementById('dbDiagText').innerHTML += '<div style=\'color:#fca5a5\'>ERROR: Firebase App SDK could not load. Check internet/CDN access.</div>'"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" onerror="document.getElementById('dbDiagText').innerHTML += '<div style=\'color:#fca5a5\'>ERROR: Firebase Auth SDK could not load.</div>'"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" onerror="document.getElementById('dbDiagText').innerHTML += '<div style=\'color:#fca5a5\'>ERROR: Firestore SDK could not load.</div>'"></script>
 <script>
 const firebaseConfig={apiKey:"AIzaSyCtdtcz0-COkUyiVltSfjqvLJKSJUfFdnQ",authDomain:"durgapur-buzz.firebaseapp.com",projectId:"durgapur-buzz",storageBucket:"durgapur-buzz.firebasestorage.app",messagingSenderId:"497404708557",appId:"1:497404708557:web:ffa4bd20ab45d836c84b84",measurementId:"G-GE37SBVT9K"};
 const ADMIN_UID="QdERp0w3SAaS18UWc7qkjIXZmii2";
-const app=firebase.initializeApp(firebaseConfig),auth=firebase.auth(),db=firebase.firestore();
+let app,auth,db;
+try {
+ if(!window.firebase) throw new Error("Firebase SDK global is missing; CDN script did not load.");
+ if(!firebase.initializeApp || !firebase.firestore) throw new Error("Firebase App/Firestore SDK incomplete.");
+ app=firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();
+} catch(initError) {
+ const panel=document.getElementById("dbDiagText");
+ if(panel) panel.innerHTML += `<div style="color:#fca5a5;font-weight:bold">FIREBASE INIT ERROR: ${String(initError.message||initError)}</div>`;
+ console.error("Firebase initialization failed",initError);
+ throw initError;
+}
+window.addEventListener("error",e=>{const panel=document.getElementById("dbDiagText");if(panel){const row=document.createElement("div");row.style.color="#fca5a5";row.textContent="JAVASCRIPT ERROR: "+(e.message||"Unknown error");panel.appendChild(row);}});
+window.addEventListener("unhandledrejection",e=>{const panel=document.getElementById("dbDiagText");if(panel){const row=document.createElement("div");row.style.color="#fca5a5";row.textContent="PROMISE ERROR: "+(e.reason?.message||e.reason||"Unknown rejection");panel.appendChild(row);}});
 let currentUser=null,allNews=[],siteSettings={},currentLang=localStorage.getItem("db_lang")||"bn",activeCategory="all";
 const fallbackImage="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&q=80";
 const labels={bn:{home:"প্রচ্ছদ",durgapur:"দুর্গাপুর",district:"পশ্চিম বর্ধমান",state:"রাজ্য",country:"দেশ",sports:"খেলা",entertainment:"বিনোদন",breaking:"ব্রেকিং নিউজ",top:"আজকের প্রধান খবর",latest:"সর্বশেষ খবর",local:"দুর্গাপুর ও পশ্চিম বর্ধমান",search:"খবর খুঁজুন...",empty:"এখনও কোনো খবর প্রকাশিত হয়নি।",read:"বিস্তারিত পড়ুন",published:"প্রকাশিত",admin:"Admin Login"},hi:{home:"मुखपृष्ठ",durgapur:"दुर्गापुर",district:"पश्चिम बर्धमान",state:"राज्य",country:"देश",sports:"खेल",entertainment:"मनोरंजन",breaking:"ब्रेकिंग न्यूज़",top:"आज की प्रमुख खबरें",latest:"ताज़ा खबरें",local:"दुर्गापुर और पश्चिम बर्धमान",search:"खबर खोजें...",empty:"अभी कोई खबर प्रकाशित नहीं हुई है।",read:"पूरी खबर पढ़ें",published:"प्रकाशित",admin:"Admin Login"},en:{home:"Home",durgapur:"Durgapur",district:"Paschim Bardhaman",state:"State",country:"India",sports:"Sports",entertainment:"Entertainment",breaking:"BREAKING NEWS",top:"Top Stories Today",latest:"Latest News",local:"Durgapur & Paschim Bardhaman",search:"Search news...",empty:"No news published yet.",read:"Read full story",published:"Published",admin:"Admin Login"}};

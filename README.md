@@ -18,3 +18,6 @@ Static HTML/CSS/JavaScript website using the existing Firebase project `durgapur
 - Add a title and status when creating content. Use `Published` to show it publicly, `Draft` to keep it hidden, and `Hidden` to temporarily hide it.
 - This version accepts image/PDF URLs in content forms. Firebase Storage rules are included for a future upload control; the upload UI is not yet enabled in this build.
 - Admin UID checks in the interface are not a substitute for Firestore Rules. Publish the rules before using the new collections.
+
+
+Admin update: Hero Slider Control is now a separate option under Website Control. Homepage & Website Settings no longer contains the slide editor.

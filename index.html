@@ -16,6 +16,8 @@
 </style>
 </head>
 <body>
+<div id="dbDiag" style="position:fixed;z-index:99999;left:8px;right:8px;bottom:8px;background:#111827;color:#fff;border:2px solid #f59e0b;border-radius:10px;padding:10px;font:13px/1.5 Arial;max-height:38vh;overflow:auto;box-shadow:0 4px 20px #0008"><b style="color:#fbbf24">DURGAPUR BUZZ • Firebase Diagnostic</b><div id="dbDiagText">Diagnostic script loaded. Waiting for Firebase…</div><button onclick="document.getElementById('dbDiag').remove()" style="margin-top:6px;padding:5px 10px">Close</button></div>
+
 <div class="topline"><div class="topline-inner"><span class="top-breaking-label" id="breakingLabel">ব্রেকিং নিউজ</span><div class="topline-viewport"><div class="topline-track" id="breakingTrack"><span>দুর্গাপুর ও পশ্চিম বর্ধমানের সর্বশেষ খবর</span></div></div></div></div>
 <header class="masthead"><div class="wrap mast">
 <a class="brand" href="#" onclick="goHome();return false"><div class="brand-logo" id="logoBox">DB</div><div><div class="brand-name" id="siteName">DURGAPUR BUZZ</div><div class="tagline" id="tagline">আপনার শহরের খবর, সবার আগে</div></div></a>
@@ -87,19 +89,22 @@ function applySettings(){let s=siteSettings;document.getElementById("siteName").
 function filterCategory(cat){activeCategory=cat;let list=allNews.filter(n=>n.status==="published"&&(cat==="all"||n.category===cat));document.getElementById("listingTitle").textContent=cat==="all"?t("latest"):cat;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">${t("empty")}</div>`;showView("listingView");window.scrollTo(0,0)}
 function runSearch(){let q=document.getElementById("searchInput").value.trim().toLowerCase();let list=allNews.filter(n=>n.status==="published"&&[n.titleBn,n.titleEn,n.titleHi,n.excerptBn,n.bodyBn,n.category].join(" ").toLowerCase().includes(q));document.getElementById("listingTitle").textContent="Search: "+q;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">কোনো খবর পাওয়া যায়নি।</div>`;showView("listingView")}
 function openArticle(id){let n=allNews.find(x=>x.id===id);if(!n)return;let video=validUrl(n.videoUrl);document.getElementById("articleView").innerHTML=`<article class="article-box"><span class="category">${safe(n.category||"News")}</span><h1>${safe(textFor(n,"title"))}</h1><div class="meta">${dateText(n.createdAt)} · DURGAPUR BUZZ</div><img class="article-cover" src="${safe(validUrl(n.imageUrl)||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div class="article-body">${safe(textFor(n,"body")||textFor(n,"excerpt"))}</div>${video?`<p><a class="btn" href="${safe(video)}" target="_blank" rel="noopener">ভিডিও দেখুন</a></p>`:""}<hr style="border:0;border-top:1px solid var(--line);margin:25px 0"><button class="btn ghost" onclick="goHome()">← ${t("home")}</button></article>`;showView("articleView");window.scrollTo(0,0);location.hash="news-"+id}
+function dbDiag(msg){const el=document.getElementById("dbDiagText");if(el){const row=document.createElement("div");row.textContent=new Date().toLocaleTimeString()+" — "+msg;el.appendChild(row);}}
 async function loadData(){
+ dbDiag("Page script started; loading Firestore...");
  let settingsError=null,newsError=null;
  // Load site settings independently so a news-query error cannot hide the saved logo.
  try{
   const settingsSnap=await db.collection("site").doc("settings").get({source:"server"});
-  if(settingsSnap.exists){siteSettings=settingsSnap.data()||{};}
-  else{siteSettings={};}
- }catch(e){settingsError=e;console.error("Website settings load failed:",e);}
+  if(settingsSnap.exists){siteSettings=settingsSnap.data()||{};dbDiag("Settings read OK; logoUrl="+(siteSettings.logoUrl?"present":"EMPTY")+"; site/settings exists");}
+  else{siteSettings={};dbDiag("Settings document NOT FOUND at site/settings");}
+ }catch(e){settingsError=e;dbDiag("SETTINGS ERROR: "+(e.code||"")+" "+e.message);console.error("Website settings load failed:",e);}
  try{
   const newsSnap=await db.collection("news").where("status","==","published").get();
-  allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));
- }catch(e){newsError=e;console.error("News load failed:",e);}
+  allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));dbDiag("News query OK; published documents="+allNews.length);
+ }catch(e){newsError=e;dbDiag("NEWS ERROR: "+(e.code||"")+" "+e.message);console.error("News load failed:",e);}
  renderAll();
+ dbDiag("Render finished; cards in memory="+allNews.length+"; logo image element="+(document.querySelector("#logoBox img")?"yes":"no"));
  if(settingsError||newsError){
   const messages=[];
   if(settingsError)messages.push("Website Settings: "+settingsError.message);

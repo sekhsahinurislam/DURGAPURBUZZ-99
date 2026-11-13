@@ -150,9 +150,9 @@ function editNews(id){
  document.getElementById("imageUrl").value=n.imageUrl||"";
  document.getElementById("videoUrl").value=n.videoUrl||"";
  const lang=n.sourceLang||"bn";document.getElementById("sourceLang").value=lang;
- document.getElementById("newsTitle").value=n["title"+lang.toUpperCase()]||n.titleBn||n.titleEn||"";
- document.getElementById("newsExcerpt").value=n["excerpt"+lang.toUpperCase()]||n.excerptBn||n.excerptEn||"";
- document.getElementById("newsBody").value=n["body"+lang.toUpperCase()]||n.bodyBn||n.bodyEn||"";
+ document.getElementById("newsTitle").value=n["title"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.titleBn||n.titleEn||"";
+ document.getElementById("newsExcerpt").value=n["excerpt"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.excerptBn||n.excerptEn||"";
+ document.getElementById("newsBody").value=n["body"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.bodyBn||n.bodyEn||"";
  document.getElementById("status").value=n.status||"draft";
  document.getElementById("featured").checked=!!n.featured;
  document.getElementById("newsFormHeading").textContent="খবর Edit করুন";
@@ -161,11 +161,11 @@ function editNews(id){
 async function deleteNews(id){if(!confirm("এই খবরটি Delete করবেন?"))return;try{await db.collection("news").doc(id).delete();await refreshAll()}catch(e){alert(e.message)}}
 async function refreshAll(){await loadData();await loadAdminNews()}
 function fillSettingsForm(){let s=siteSettings;let m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"};Object.entries(m).forEach(([el,k])=>document.getElementById(el).value=(el==="settingBreaking"?(Array.isArray(s.breakingNews)?s.breakingNews.join("\n"):(s.breakingText||"")):(s[k]||"")))}
-function fillTickerForm(){let s=siteSettings;document.getElementById("settingBreaking").value=Array.isArray(s.breakingNews)?s.breakingNews.join("\\n"):(s.breakingText||"");document.getElementById("tickerSourceLang").value=s.breakingSourceLang||"bn"}
+function fillTickerForm(){let s=siteSettings;document.getElementById("settingBreaking").value=Array.isArray(s.breakingNews)?s.breakingNews.join("\n"):(s.breakingText||"");document.getElementById("tickerSourceLang").value=s.breakingSourceLang||"bn"}
 async function saveTicker(){
  if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");
  const from=document.getElementById("tickerSourceLang").value;
- const lines=document.getElementById("settingBreaking").value.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+ const lines=document.getElementById("settingBreaking").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const box=document.getElementById("tickerTab");
  const button=box.querySelector("button.btn");button.disabled=true;button.textContent="Translating...";
  try{
@@ -177,7 +177,7 @@ async function saveTicker(){
  }catch(e){alert("Headline translation failed: "+e.message)}
  finally{button.disabled=false;button.textContent="Save Headlines"}
 }
-async function saveSettings(){if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");let m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"},data={};Object.entries(m).forEach(([el,k])=>data[k]=document.getElementById(el).value.trim());data.breakingNews=(data.breakingNews||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);delete data.breakingText;data.logoUrl=validUrl(data.logoUrl);data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();try{await db.collection("site").doc("settings").set(data,{merge:true});siteSettings={...siteSettings,...data};applySettings();alert("Website settings updated")}catch(e){alert("Settings save failed: "+e.message)}}
+async function saveSettings(){if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");let m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"},data={};Object.entries(m).forEach(([el,k])=>data[k]=document.getElementById(el).value.trim());/* Breaking headlines are saved separately in the Headlines tab. Preserve them here. */data.logoUrl=validUrl(data.logoUrl);data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();try{await db.collection("site").doc("settings").set(data,{merge:true});siteSettings={...siteSettings,...data};applySettings();alert("Website settings updated")}catch(e){alert("Settings save failed: "+e.message)}}
 document.getElementById("todayLine").textContent=new Date().toLocaleDateString("bn-BD",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 loadData();
 </script>

@@ -39,19 +39,19 @@
 <div class="modal" id="loginModal"><div class="modal-card" style="max-width:430px"><div class="modal-head"><h2>Admin Login</h2><button class="close" onclick="closeModal('loginModal')">×</button></div><div class="notice">শুধুমাত্র অনুমোদিত Super Admin প্রবেশ করতে পারবেন।</div><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="Admin email"></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"></div><button class="btn" style="width:100%" onclick="loginAdmin()">Login</button><p id="loginError" style="color:#b42318"></p></div></div>
 
 <div class="modal" id="adminModal"><div class="modal-card"><div class="modal-head"><div><h2 style="margin:0">DURGAPUR BUZZ Admin</h2><small id="adminIdentity"></small></div><button class="close" onclick="closeAdmin()">×</button></div>
-<div class="admin-tabs"><button class="btn" onclick="showAdminTab('newsTab')">News</button><button class="btn secondary" onclick="showAdminTab('tickerTab')">Breaking Headlines</button><button class="btn secondary" onclick="showAdminTab('settingsTab')">Settings</button><button class="btn ghost" onclick="logoutAdmin()">Logout</button></div>
+<div class="admin-tabs"><button class="btn" onclick="showAdminTab('newsTab')">News</button><button class="btn secondary" onclick="showAdminTab('facebookNewsTab')">Facebook News URL</button><button class="btn secondary" onclick="showAdminTab('tickerTab')">Breaking Headlines</button><button class="btn secondary" onclick="showAdminTab('settingsTab')">Settings</button><button class="btn ghost" onclick="logoutAdmin()">Logout</button></div>
 <div id="newsTab"><div class="admin-section"><h3 id="newsFormHeading">নতুন খবর প্রকাশ করুন</h3><p style="font-size:13px;color:#777;margin-top:0">প্রয়োজনীয় তথ্য দিন, তারপর Save News চাপুন।</p><input type="hidden" id="editId">
 <div class="form-grid">
 <div class="field"><label>Category (বাংলা)</label><input id="category" placeholder="দুর্গাপুর"></div><div class="field"><label>Cover Image URL</label><input id="imageUrl" placeholder="https://...jpg"></div>
 <div class="field"><label>খবরের ভাষা</label><select id="sourceLang"><option value="bn">বাংলা</option><option value="hi">हिन्दी</option><option value="en">English</option></select></div>
 <div class="field"><label>খবরের শিরোনাম</label><input id="newsTitle" placeholder="একবারই শিরোনাম লিখুন"></div>
 <div class="field"><label>সম্পূর্ণ খবর</label><textarea id="newsBody" style="min-height:150px" placeholder="সম্পূর্ণ খবর লিখুন"></textarea></div>
-<div class="field"><label>Facebook News/Post URL (optional)</label><input id="facebookPostUrl" type="url" placeholder="https://www.facebook.com/..." /></div>
 <div class="field"><label>Video URL (optional)</label><input id="videoUrl" placeholder="YouTube / MP4 URL"></div>
 <div class="field"><label>প্রকাশের অবস্থা</label><select id="status"><option value="published">Publish</option><option value="draft">Draft</option></select></div>
 <div class="notice" id="translationNotice">একবার খবর লিখলেই বাংলা, हिन्दी ও English-এ অনুবাদ করে সংরক্ষণের চেষ্টা করা হবে। অনুবাদের জন্য ইন্টারনেট প্রয়োজন।</div>
 </div><label style="display:flex;gap:8px;align-items:center;margin:8px 0 14px"><input type="checkbox" id="featured"> Featured / প্রধান খবর</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="saveNews()">Save News</button><button class="btn ghost" onclick="resetNewsForm()">Clear Form</button></div>
 </div><div class="admin-section"><h3>Published & Draft News</h3><div id="adminNewsList">Loading...</div></div></div>
+<div id="facebookNewsTab" class="hidden"><div class="admin-section"><h3>Facebook News URL আলাদা Section</h3><p>প্রথমে প্রকাশিত খবর নির্বাচন করুন, তারপর সেই খবরের Facebook Post URL যুক্ত বা পরিবর্তন করুন।</p><div class="field"><label>খবর নির্বাচন করুন</label><select id="facebookNewsSelect" onchange="loadSelectedFacebookUrl()"><option value="">খবর নির্বাচন করুন</option></select></div><div class="field"><label>Facebook Post URL</label><input id="facebookNewsUrl" type="url" placeholder="https://www.facebook.com/..." /></div><button class="btn" onclick="saveFacebookNewsUrl()">Save Facebook URL</button><p class="status" id="facebookNewsStatus">এই Section-এ Facebook URL আলাদাভাবে পরিচালনা করতে পারবেন।</p></div></div>
 <div id="tickerTab" class="hidden"><div class="admin-section"><h3>উপরের কালো বারের হেডলাইন</h3><p>প্রতিটি লাইনে একটি করে ছোট খবর লিখুন। একবার যে ভাষায় লিখবেন, সেটি বাংলা, হিন্দি ও ইংরেজিতে অনুবাদ করে দেখানোর চেষ্টা করা হবে।</p><div class="field"><label>হেডলাইনের ভাষা</label><select id="tickerSourceLang"><option value="bn">বাংলা</option><option value="hi">हिन्दी</option><option value="en">English</option></select></div><div class="field"><label>একাধিক হেডলাইন — প্রতি লাইনে একটি</label><textarea id="settingBreaking" rows="9" placeholder="দুর্গাপুরে আজকের খবর...&#10;পশ্চিম বর্ধমানে নতুন আপডেট..."></textarea></div><button class="btn" onclick="saveTicker()">Save Headlines</button></div></div>
 <div id="settingsTab" class="hidden"><div class="admin-section"><h3>Website Settings</h3><div class="notice">Logo, ছবি ও ভিডিওর জন্য সরাসরি public URL ব্যবহার করুন। Firebase Storage ব্যবহার করা হচ্ছে না।</div>
 <div class="form-grid"><div class="field"><label>Website Name</label><input id="settingName"></div><div class="field"><label>Tagline</label><input id="settingTagline"></div><div class="field"><label>Logo Image URL</label><input id="settingLogo" placeholder="https://...png"></div><div class="field"><label>Contact Email</label><input id="settingEmail"></div><div class="field"><label>Instagram URL</label><input id="settingInstagram"></div><div class="field"><label>Facebook URL</label><input id="settingFacebook"></div><div class="field"><label>YouTube URL</label><input id="settingYoutube"></div><div class="field"><label>About Website</label><textarea id="settingAbout"></textarea></div></div><button class="btn" onclick="saveSettings()">Save Website Settings</button></div></div>
@@ -127,8 +127,8 @@ auth.onAuthStateChanged(user=>{currentUser=user;if(user&&user.uid!==ADMIN_UID)au
 async function openAdminPanel(){if(!currentUser||currentUser.uid!==ADMIN_UID){openModal("loginModal");return}document.getElementById("adminIdentity").textContent=currentUser.email;openModal("adminModal");loadAdminNews();try{const snap=await db.collection("site").doc("settings").get({source:"server"});if(snap.exists)siteSettings=snap.data()}catch(e){console.error("Settings load failed",e)}fillSettingsForm()}
 function closeAdmin(){closeModal("adminModal")}
 async function logoutAdmin(){await auth.signOut();closeAdmin()}
-function showAdminTab(id){["newsTab","tickerTab","settingsTab"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));if(id==="tickerTab")fillTickerForm()}
-function resetNewsForm(){["editId","category","imageUrl","facebookPostUrl","videoUrl","newsTitle","newsBody"].forEach(id=>document.getElementById(id).value="");document.getElementById("sourceLang").value="bn";document.getElementById("featured").checked=false;document.getElementById("status").value="published";document.getElementById("newsFormHeading").textContent="নতুন খবর প্রকাশ করুন"}
+function showAdminTab(id){["newsTab","facebookNewsTab","tickerTab","settingsTab"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));if(id==="tickerTab")fillTickerForm();if(id==="facebookNewsTab")fillFacebookNewsSelect()}
+function resetNewsForm(){["editId","category","imageUrl","videoUrl","newsTitle","newsBody"].forEach(id=>document.getElementById(id).value="");document.getElementById("sourceLang").value="bn";document.getElementById("featured").checked=false;document.getElementById("status").value="published";document.getElementById("newsFormHeading").textContent="নতুন খবর প্রকাশ করুন"}
 async function translateText(text,from,to){
  if(!text||from===to)return text||"";
  const langMap={bn:"bn",hi:"hi",en:"en"};
@@ -159,8 +159,7 @@ async function saveNews(){
    category:document.getElementById("category").value.trim(),
    imageUrl:validUrl(document.getElementById("imageUrl").value),
    videoUrl:validUrl(document.getElementById("videoUrl").value),
-   facebookPostUrl:validUrl(document.getElementById("facebookPostUrl").value),
-   titleBn:titles.bn,titleHi:titles.hi,titleEn:titles.en,
+      titleBn:titles.bn,titleHi:titles.hi,titleEn:titles.en,
    excerptBn:"",excerptHi:"",excerptEn:"",
    bodyBn:bodies.bn,bodyHi:bodies.hi,bodyEn:bodies.en,
    sourceLang:from,status:document.getElementById("status").value,
@@ -182,7 +181,6 @@ function editNews(id){
  document.getElementById("category").value=n.category||"";
  document.getElementById("imageUrl").value=n.imageUrl||"";
  document.getElementById("videoUrl").value=n.videoUrl||"";
- document.getElementById("facebookPostUrl").value=n.facebookPostUrl||"";
  const lang=n.sourceLang||"bn";document.getElementById("sourceLang").value=lang;
  document.getElementById("newsTitle").value=n["title"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.titleBn||n.titleEn||"";
  document.getElementById("newsBody").value=n["body"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.bodyBn||n.bodyEn||"";
@@ -193,6 +191,9 @@ function editNews(id){
 }
 async function deleteNews(id){if(!confirm("এই খবরটি Delete করবেন?"))return;try{await db.collection("news").doc(id).delete();await refreshAll()}catch(e){alert(e.message)}}
 async function refreshAll(){await loadData();await loadAdminNews()}
+function fillFacebookNewsSelect(){const sel=document.getElementById("facebookNewsSelect");if(!sel)return;const previous=sel.value;const items=allNews.slice().sort((a,b)=>((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));sel.innerHTML='<option value="">খবর নির্বাচন করুন</option>'+items.map(n=>`<option value="${safe(n.id)}">${safe(n.titleBn||n.titleEn||n.titleHi||"শিরোনাম নেই")}</option>`).join("");if(previous&&items.some(n=>n.id===previous))sel.value=previous;loadSelectedFacebookUrl()}
+function loadSelectedFacebookUrl(){const id=document.getElementById("facebookNewsSelect")?.value;const n=allNews.find(x=>x.id===id);const input=document.getElementById("facebookNewsUrl");if(input)input.value=n?.facebookPostUrl||""}
+async function saveFacebookNewsUrl(){if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");const id=document.getElementById("facebookNewsSelect").value;const url=document.getElementById("facebookNewsUrl").value.trim();if(!id)return alert("আগে একটি খবর নির্বাচন করুন");if(url&&!validUrl(url))return alert("সঠিক Facebook URL দিন");try{await db.collection("news").doc(id).update({facebookPostUrl:url?validUrl(url):"",updatedAt:firebase.firestore.FieldValue.serverTimestamp()});const n=allNews.find(x=>x.id===id);if(n)n.facebookPostUrl=url?validUrl(url):"";document.getElementById("facebookNewsStatus").textContent="Facebook URL সংরক্ষণ হয়েছে।";alert("Facebook URL saved");}catch(e){document.getElementById("facebookNewsStatus").textContent="Save failed: "+e.message;alert("Save failed: "+e.message)}}
 function fillSettingsForm(){let s=siteSettings;let m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"};Object.entries(m).forEach(([el,k])=>document.getElementById(el).value=(el==="settingBreaking"?(Array.isArray(s.breakingNews)?s.breakingNews.join("\n"):(s.breakingText||"")):(s[k]||"")))}
 function fillTickerForm(){let s=siteSettings;document.getElementById("settingBreaking").value=Array.isArray(s.breakingNews)?s.breakingNews.join("\n"):(s.breakingText||"");document.getElementById("tickerSourceLang").value=s.breakingSourceLang||"bn"}
 async function saveTicker(){

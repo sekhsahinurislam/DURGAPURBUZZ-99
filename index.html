@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#9f1725">
+<meta name="theme-color" content="#155e75">
 <meta name="description" content="DURGAPUR BUZZ — দুর্গাপুর ও পশ্চিম বর্ধমানের খবর, সবার আগে।">
 <title>DURGAPUR BUZZ | আপনার শহরের খবর</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +31,37 @@
 .admin-section .field input,.admin-section .field textarea{font-size:13px}
 @media(max-width:760px){.page{padding:0 13px;margin:16px auto}.hero-grid{grid-template-columns:1fr}.hero-main,.hero-main img{min-height:245px;height:245px}.hero-side{grid-template-columns:1fr 1fr;grid-template-rows:auto}.side-story{grid-template-columns:1fr;display:flex;flex-direction:column;min-height:0}.side-story img{height:105px}.side-copy{padding:9px}.side-copy h3{font-size:13px;line-height:1.4}.story-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.story-card img{height:125px}.story-copy{padding:9px}.story-copy h3{font-size:13px;line-height:1.45}.article-body{font-size:15px;line-height:1.9}.facebook-post-card .fb-thumb{height:120px}}
 @media(max-width:380px){.story-grid{gap:8px}.story-card img{height:110px}.story-copy h3{font-size:12px}}
+
+/* Open Concept Bangla-inspired visual system — DURGAPUR BUZZ branding */
+:root{--red:#155e75;--red2:#123b56;--ink:#172b3a;--muted:#607486;--line:#e1eaf0;--paper:#fff;--soft:#f0f7fa;--gold:#18a6a0;--shadow:0 14px 38px rgba(15,55,78,.10)}
+body{background:#f3f8fb;color:var(--ink);font-family:"Hind Siliguri",Inter,sans-serif}
+.topline{background:#102f46}.top-breaking-label{background:#0d9488}.topline-track span:before{color:#70ddd2}
+.masthead{background:linear-gradient(115deg,#fff 0%,#f4fbfd 65%,#eaf6f8 100%);border-bottom:1px solid #dcebf0}
+.brand-logo{background:linear-gradient(145deg,#155e75,#0d9488);box-shadow:0 6px 18px rgba(13,148,136,.2)}
+.brand-name{color:#123b56}.tagline{color:#5d7483}
+.iconbtn{border-color:#d7e6ed;background:#fff;color:#155e75;box-shadow:0 3px 10px rgba(18,59,86,.04)}
+.iconbtn:hover{background:#eaf7f7;border-color:#9bd7d2}
+.menu{border-color:#dce9ee;border-radius:16px;box-shadow:0 18px 40px rgba(15,55,78,.14)}
+.nav{background:linear-gradient(90deg,#123b56,#155e75 70%,#0d9488);box-shadow:0 5px 18px rgba(18,59,86,.12)}
+.nav a{font-weight:600}.nav a:hover{background:rgba(255,255,255,.13)}
+.page{max-width:1200px;margin:26px auto}
+.section-head{border-bottom:2px solid #b9dce1}.section-head h2{background:linear-gradient(120deg,#155e75,#0d9488);border-radius:9px 9px 0 0;font-size:19px;padding:8px 17px 7px}
+.hero-main,.story-card,.side-story,.article-box,.panel,.sidebar-box{border:1px solid #e0ebef;border-radius:16px;box-shadow:0 7px 22px rgba(17,59,82,.055)}
+.hero-main{min-height:390px}.hero-main img{border-radius:15px 15px 0 0}.hero-overlay{background:linear-gradient(transparent,rgba(8,34,49,.88));padding:26px}.hero-overlay h1{line-height:1.42}
+.kicker,.category{color:#0d9488}.hero-overlay .kicker{color:#8ce4dc}
+.side-story{overflow:hidden}.side-story img{background:#e6f1f4}.side-copy h3{line-height:1.48}
+.story-card{overflow:hidden;transition:transform .22s ease,box-shadow .22s ease}.story-card:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(17,59,82,.12)}
+.story-card img{background:#eaf2f5}.story-copy h3{line-height:1.55;color:#17384b}.story-copy p{color:#617789}
+.searchbar input,.field input,.field textarea,.field select{border:1px solid #d7e5eb;border-radius:11px;background:#fff;color:#17384b;outline:none;transition:border-color .15s,box-shadow .15s}
+.searchbar input:focus,.field input:focus,.field textarea:focus,.field select:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+.btn{background:linear-gradient(120deg,#155e75,#0d9488);border-radius:10px;box-shadow:0 4px 10px rgba(13,148,136,.12)}.btn:hover{background:linear-gradient(120deg,#123b56,#087f79)}.btn.secondary{background:#173b53}.btn.ghost{background:#eaf3f6;color:#23495e;box-shadow:none}.btn.danger{background:#b42318}
+.article-box{padding:clamp(20px,4vw,42px);box-shadow:0 12px 34px rgba(17,59,82,.07)}.article-box h1{color:#123b56;line-height:1.5}.article-body{font-size:17px;line-height:2.05;color:#263f50}.article-cover{border-radius:14px}
+.facebook-post-card{border:1px solid #dce9ee;border-radius:15px;box-shadow:0 7px 20px rgba(17,59,82,.05)}.fb-link{color:#087f8c}
+.footer{background:linear-gradient(125deg,#102f46,#123b56 65%,#155e75);color:#d8e8ef}.footer h3{color:#fff}.footer a{color:#d8e8ef}.copyright{border-color:rgba(255,255,255,.16)}
+.modal{background:rgba(7,30,44,.62);backdrop-filter:blur(5px)}.modal-card{border:1px solid #dce9ee;border-radius:18px;box-shadow:0 24px 70px rgba(5,35,52,.24)}#adminModal .modal-card{border-radius:0}.modal-head{border-color:#e2edf1}.close{background:#eaf3f6;color:#23495e}.admin-tabs{background:#eaf3f6;border:1px solid #dce9ee}.admin-tabs .btn{box-shadow:none}.admin-section{background:#f8fbfc;border:1px solid #e0ebef;border-radius:14px}.notice{background:#eaf7f7;border-color:#bde4e1;color:#245b62}.news-row{border-color:#e0ebef;background:#fff;border-radius:12px}
+.empty{background:#fff;border-color:#cbdde5;color:#607486;border-radius:15px}
+@media(max-width:760px){.page{margin:17px auto}.hero-main,.hero-main img{border-radius:14px}.story-card{border-radius:12px}.story-copy{padding:11px}.article-body{font-size:16px;line-height:1.95}}
+
 </style>
 </head>
 <body>

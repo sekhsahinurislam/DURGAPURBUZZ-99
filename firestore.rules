@@ -15,5 +15,11 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+
+    // Independent Facebook link posts shown on the homepage.
+    match /facebookPosts/{postId} {
+      allow read: if resource.data.status == "published" || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

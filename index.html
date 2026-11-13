@@ -87,11 +87,11 @@ function applySettings(){let s=siteSettings;document.getElementById("siteName").
 function filterCategory(cat){activeCategory=cat;let list=allNews.filter(n=>n.status==="published"&&(cat==="all"||n.category===cat));document.getElementById("listingTitle").textContent=cat==="all"?t("latest"):cat;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">${t("empty")}</div>`;showView("listingView");window.scrollTo(0,0)}
 function runSearch(){let q=document.getElementById("searchInput").value.trim().toLowerCase();let list=allNews.filter(n=>n.status==="published"&&[n.titleBn,n.titleEn,n.titleHi,n.excerptBn,n.bodyBn,n.category].join(" ").toLowerCase().includes(q));document.getElementById("listingTitle").textContent="Search: "+q;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">কোনো খবর পাওয়া যায়নি।</div>`;showView("listingView")}
 function openArticle(id){let n=allNews.find(x=>x.id===id);if(!n)return;let video=validUrl(n.videoUrl);document.getElementById("articleView").innerHTML=`<article class="article-box"><span class="category">${safe(n.category||"News")}</span><h1>${safe(textFor(n,"title"))}</h1><div class="meta">${dateText(n.createdAt)} · DURGAPUR BUZZ</div><img class="article-cover" src="${safe(validUrl(n.imageUrl)||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div class="article-body">${safe(textFor(n,"body")||textFor(n,"excerpt"))}</div>${video?`<p><a class="btn" href="${safe(video)}" target="_blank" rel="noopener">ভিডিও দেখুন</a></p>`:""}<hr style="border:0;border-top:1px solid var(--line);margin:25px 0"><button class="btn ghost" onclick="goHome()">← ${t("home")}</button></article>`;showView("articleView");window.scrollTo(0,0);location.hash="news-"+id}
-async function loadData(){try{let [newsSnap,settingsSnap]=await Promise.all([db.collection("news").where("status","==","published").get(),db.collection("site").doc("settings").get()]);allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));if(settingsSnap.exists)siteSettings=settingsSnap.data();renderAll()}catch(e){console.error(e);document.getElementById("heroGrid").innerHTML=`<div class="notice" style="grid-column:1/-1">Firebase সংযোগ হয়নি। Firestore Database তৈরি করুন এবং Public Read Rules Publish করুন। ${safe(e.message)}</div>`;renderAll()}}
+async function loadData(){try{let [newsSnap,settingsSnap]=await Promise.all([db.collection("news").where("status","==","published").get(),db.collection("site").doc("settings").get({source:"server"})]);allNews=newsSnap.docs.map(d=>({id:d.id,...d.data()}));if(settingsSnap.exists)siteSettings=settingsSnap.data();renderAll()}catch(e){console.error(e);document.getElementById("heroGrid").innerHTML=`<div class="notice" style="grid-column:1/-1">Firebase সংযোগ হয়নি। Firestore Database তৈরি করুন এবং Rules Publish করুন। ${safe(e.message)}</div>`;renderAll()}}
 function openAdmin(){toggleMenu(false);if(currentUser&&currentUser.uid===ADMIN_UID){openAdminPanel()}else openModal("loginModal")}
 async function loginAdmin(){let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;document.getElementById("loginError").textContent="";try{let cred=await auth.signInWithEmailAndPassword(email,password);if(cred.user.uid!==ADMIN_UID){await auth.signOut();throw new Error("এই অ্যাকাউন্টটি Super Admin নয়। UID মিলছে না।")}closeModal("loginModal");openAdminPanel()}catch(e){document.getElementById("loginError").textContent=e.message}}
 auth.onAuthStateChanged(user=>{currentUser=user;if(user&&user.uid!==ADMIN_UID)auth.signOut()});
-function openAdminPanel(){if(!currentUser||currentUser.uid!==ADMIN_UID){openModal("loginModal");return}document.getElementById("adminIdentity").textContent=currentUser.email;openModal("adminModal");loadAdminNews();fillSettingsForm()}
+async function openAdminPanel(){if(!currentUser||currentUser.uid!==ADMIN_UID){openModal("loginModal");return}document.getElementById("adminIdentity").textContent=currentUser.email;openModal("adminModal");loadAdminNews();try{const snap=await db.collection("site").doc("settings").get({source:"server"});if(snap.exists)siteSettings=snap.data()}catch(e){console.error("Settings load failed",e)}fillSettingsForm()}
 function closeAdmin(){closeModal("adminModal")}
 async function logoutAdmin(){await auth.signOut();closeAdmin()}
 function showAdminTab(id){["newsTab","tickerTab","settingsTab"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));if(id==="tickerTab")fillTickerForm()}
@@ -177,7 +177,24 @@ async function saveTicker(){
  }catch(e){alert("Headline translation failed: "+e.message)}
  finally{button.disabled=false;button.textContent="Save Headlines"}
 }
-async function saveSettings(){if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");let m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"},data={};Object.entries(m).forEach(([el,k])=>data[k]=document.getElementById(el).value.trim());/* Breaking headlines are saved separately in the Headlines tab. Preserve them here. */data.logoUrl=validUrl(data.logoUrl);data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();try{await db.collection("site").doc("settings").set(data,{merge:true});siteSettings={...siteSettings,...data};applySettings();alert("Website settings updated")}catch(e){alert("Settings save failed: "+e.message)}}
+async function saveSettings(){
+ if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");
+ const m={settingName:"siteName",settingTagline:"tagline",settingLogo:"logoUrl",settingEmail:"contactEmail",settingInstagram:"instagram",settingFacebook:"facebook",settingYoutube:"youtube",settingAbout:"about"},data={};
+ Object.entries(m).forEach(([el,k])=>data[k]=document.getElementById(el).value.trim());
+ const enteredLogo=data.logoUrl;data.logoUrl=enteredLogo?validUrl(enteredLogo):"";
+ if(enteredLogo&&!data.logoUrl)return alert("Logo URL সঠিক নয়। https:// দিয়ে শুরু হওয়া সম্পূর্ণ image URL দিন।");
+ data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+ const button=document.querySelector('#settingsTab button.btn');if(button){button.disabled=true;button.textContent="Saving..."}
+ try{
+  const ref=db.collection("site").doc("settings");
+  await ref.set(data,{merge:true});
+  const saved=await ref.get({source:"server"});
+  if(!saved.exists||String(saved.data().logoUrl||"")!==String(data.logoUrl||""))throw new Error("Firebase-এ Logo URL verify করা যায়নি। Firestore Rules ও Project ID পরীক্ষা করুন।");
+  siteSettings=saved.data();applySettings();
+  alert("Website settings Firebase-এ সফলভাবে Save হয়েছে। Refresh করেও Logo থাকার কথা।");
+ }catch(e){console.error("Settings save/verify error:",e);alert("Settings Save হয়নি: "+e.message)}
+ finally{if(button){button.disabled=false;button.textContent="Save Website Settings"}}
+}
 document.getElementById("todayLine").textContent=new Date().toLocaleDateString("bn-BD",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 loadData();
 </script>

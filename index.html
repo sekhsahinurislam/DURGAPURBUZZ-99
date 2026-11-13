@@ -153,7 +153,19 @@ html.admin-open,body.admin-open{overflow:hidden!important;height:100%!important}
 #internalLinkModal #internalLinkFrame{display:block;width:100%;height:100%;flex:1 1 auto;min-height:0;border:0;background:#fff}
 @supports not (height:100dvh){#internalLinkModal .internal-fullscreen-box{height:100vh!important;max-height:100vh!important}}
 
-.footer-socials{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.footer-socials a{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #267454;border-radius:12px;background:#0b4a37;color:#eafff3;font-weight:700;line-height:1.2;transition:.18s}.footer-socials a:hover{background:#126448;border-color:#63e6a3;transform:translateY(-2px)}.footer-socials svg{width:21px;height:21px;flex:0 0 21px}.design-credit{float:right;color:#b7d4c7;text-decoration:none;font-weight:600}.design-credit:hover{color:#65efa7;text-decoration:underline}@media(max-width:560px){.copyright{display:flex;flex-direction:column;gap:9px}.design-credit{float:none;align-self:flex-start}}
+/* Compact, brand-colour social buttons: always one row on mobile */
+.footer-socials{display:flex;flex-wrap:nowrap;align-items:center;gap:clamp(4px,1.5vw,9px);margin-top:14px;width:100%;min-width:0}
+.footer-socials a{display:inline-flex;flex:1 1 0;min-width:0;align-items:center;justify-content:center;gap:clamp(4px,1.2vw,8px);padding:8px clamp(4px,1.7vw,11px);border:1px solid #267454;border-radius:11px;background:#0b4a37;color:#eafff3;font-size:clamp(10px,3.1vw,14px);font-weight:700;line-height:1.15;white-space:nowrap;transition:.18s}
+.footer-socials a:hover{background:#126448;border-color:#63e6a3;transform:translateY(-2px)}
+.footer-socials svg{width:clamp(16px,4.5vw,21px);height:clamp(16px,4.5vw,21px);flex:0 0 clamp(16px,4.5vw,21px)}
+.footer-socials #footerFacebook svg{color:#1877F2}
+.footer-socials #footerInstagram svg{color:#E4405F}
+.footer-socials #footerYoutube svg{color:#FF0033}
+.footer-socials #footerFacebook svg path{fill:#1877F2}
+.footer-socials #footerInstagram svg rect,.footer-socials #footerInstagram svg circle{stroke:#E4405F}
+.footer-socials #footerInstagram svg circle:last-child{fill:#E4405F;stroke:none}
+.footer-socials #footerYoutube svg path{fill:#FF0033}
+@media(max-width:350px){.footer-socials a{letter-spacing:-.25px;padding-left:3px;padding-right:3px}.footer-socials{gap:3px}}.design-credit{float:right;color:#b7d4c7;text-decoration:none;font-weight:600}.design-credit:hover{color:#65efa7;text-decoration:underline}@media(max-width:560px){.copyright{display:flex;flex-direction:column;gap:9px}.design-credit{float:none;align-self:flex-start}}
 </style>
 </head>
 <body>

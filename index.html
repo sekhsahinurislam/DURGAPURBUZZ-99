@@ -34,7 +34,7 @@
 <div id="listingView" class="hidden"><div class="section-head"><h2 id="listingTitle">খবর</h2></div><div class="story-grid" id="listingGrid"></div></div>
 <div id="articleView" class="hidden"></div>
 </main>
-<footer class="footer"><div class="wrap"><div class="footer-grid"><div><div class="brand-name" style="color:white" id="footerName">DURGAPUR BUZZ</div><p id="footerTagline">আপনার শহরের খবর, সবার আগে।</p><p id="footerAbout">দুর্গাপুর ও পশ্চিম বর্ধমানের নির্ভরযোগ্য স্থানীয় সংবাদমাধ্যম।</p></div><div><h3>যোগাযোগ</h3><a href="mailto:thedurgapurbuzz@gmail.com">thedurgapurbuzz@gmail.com</a><a id="footerFacebook" target="_blank">Facebook</a></div><div><h3>Follow Us</h3><a id="footerInstagram" target="_blank">Instagram</a><a id="footerYoutube" target="_blank">YouTube</a></div></div><div class="copyright">© <span id="year"></span> DURGAPUR BUZZ. All rights reserved.</div></div></footer>
+<footer class="footer"><div class="wrap"><div class="footer-grid"><div><div class="brand-name" style="color:white" id="footerName">DURGAPUR BUZZ</div><p id="footerTagline">আপনার শহরের খবর, সবার আগে।</p><p id="footerAbout">দুর্গাপুর ও পশ্চিম বর্ধমানের নির্ভরযোগ্য স্থানীয় সংবাদমাধ্যম।</p></div><div><h3>যোগাযোগ</h3><a href="mailto:thedurgapurbuzz@gmail.com">thedurgapurbuzz@gmail.com</a><a id="footerFacebook" target="_blank">Facebook</a></div><div><h3>Follow Us</h3><a id="footerInstagram" target="_blank">Instagram</a><a id="footerYoutube" target="_blank">YouTube</a></div></div><div class="copyright">© <span id="year"></span> DURGAPUR BUZZ. All rights reserved. <span style="float:right">Design by <a href="https://www.instagram.com/sksahinur.islam?exln=MW5qNmQ0anZ0cDk2Yw==" target="_blank" rel="noopener noreferrer" style="display:inline;color:#fff;text-decoration:underline">Sahinur Islam</a></span></div></div></footer>
 
 <div class="modal" id="loginModal"><div class="modal-card" style="max-width:430px"><div class="modal-head"><h2>Admin Login</h2><button class="close" onclick="closeModal('loginModal')">×</button></div><div class="notice">শুধুমাত্র অনুমোদিত Super Admin প্রবেশ করতে পারবেন।</div><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="Admin email"></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"></div><button class="btn" style="width:100%" onclick="loginAdmin()">Login</button><p id="loginError" style="color:#b42318"></p></div></div>
 
@@ -45,8 +45,8 @@
 <div class="field"><label>Category (বাংলা)</label><input id="category" placeholder="দুর্গাপুর"></div><div class="field"><label>Cover Image URL</label><input id="imageUrl" placeholder="https://...jpg"></div>
 <div class="field"><label>খবরের ভাষা</label><select id="sourceLang"><option value="bn">বাংলা</option><option value="hi">हिन्दी</option><option value="en">English</option></select></div>
 <div class="field"><label>খবরের শিরোনাম</label><input id="newsTitle" placeholder="একবারই শিরোনাম লিখুন"></div>
-<div class="field"><label>সংক্ষিপ্ত বিবরণ</label><textarea id="newsExcerpt" rows="2" placeholder="খবরের সংক্ষিপ্ত বিবরণ"></textarea></div>
 <div class="field"><label>সম্পূর্ণ খবর</label><textarea id="newsBody" style="min-height:150px" placeholder="সম্পূর্ণ খবর লিখুন"></textarea></div>
+<div class="field"><label>Facebook News/Post URL (optional)</label><input id="facebookPostUrl" type="url" placeholder="https://www.facebook.com/..." /></div>
 <div class="field"><label>Video URL (optional)</label><input id="videoUrl" placeholder="YouTube / MP4 URL"></div>
 <div class="field"><label>প্রকাশের অবস্থা</label><select id="status"><option value="published">Publish</option><option value="draft">Draft</option></select></div>
 <div class="notice" id="translationNotice">একবার খবর লিখলেই বাংলা, हिन्दी ও English-এ অনুবাদ করে সংরক্ষণের চেষ্টা করা হবে। অনুবাদের জন্য ইন্টারনেট প্রয়োজন।</div>
@@ -96,7 +96,7 @@ let published=allNews.filter(n=>n.status==="published").sort((a,b)=>(b.createdAt
 function applySettings(){let s=siteSettings;document.getElementById("siteName").textContent=s.siteName||"DURGAPUR BUZZ";document.getElementById("footerName").textContent=s.siteName||"DURGAPUR BUZZ";document.getElementById("tagline").textContent=s.tagline||"আপনার শহরের খবর, সবার আগে";document.getElementById("footerTagline").textContent=s.tagline||"আপনার শহরের খবর, সবার আগে";const tickerItems=(Array.isArray(s.breakingNews)?s.breakingNews:(s.breakingText||"দুর্গাপুর ও পশ্চিম বর্ধমানের সর্বশেষ খবর").split("\n")).map(x=>typeof x==="string"?x:(x[currentLang]||x.bn||x.en||"")).map(x=>String(x).trim()).filter(Boolean);document.getElementById("breakingTrack").innerHTML=(tickerItems.length?tickerItems:["দুর্গাপুর ও পশ্চিম বর্ধমানের সর্বশেষ খবর"]).map(x=>`<span>${safe(x)}</span>`).join("");document.getElementById("footerAbout").textContent=s.about||"দুর্গাপুর ও পশ্চিম বর্ধমানের নির্ভরযোগ্য স্থানীয় সংবাদমাধ্যম।";let logo=validUrl(s.logoUrl);document.getElementById("logoBox").innerHTML=logo?`<img src="${safe(logo)}" onerror="this.parentElement.textContent='DB'">`:"DB";let links={instagram:s.instagram||"https://www.instagram.com/durgapurbuzz",facebook:s.facebook||"https://www.facebook.com/share/1TeUzphHRZ/",youtube:s.youtube||"https://youtube.com/@durgapurbuzzofficial"};for(let [k,v] of Object.entries(links)){document.getElementById(k+"Link").href=v;document.getElementById("footer"+k[0].toUpperCase()+k.slice(1)).href=v}let email=s.contactEmail||"thedurgapurbuzz@gmail.com";document.getElementById("emailLink").href="mailto:"+email}
 function filterCategory(cat){activeCategory=cat;let list=allNews.filter(n=>n.status==="published"&&(cat==="all"||n.category===cat));document.getElementById("listingTitle").textContent=cat==="all"?t("latest"):cat;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">${t("empty")}</div>`;showView("listingView");window.scrollTo(0,0)}
 function runSearch(){let q=document.getElementById("searchInput").value.trim().toLowerCase();let list=allNews.filter(n=>n.status==="published"&&[n.titleBn,n.titleEn,n.titleHi,n.excerptBn,n.bodyBn,n.category].join(" ").toLowerCase().includes(q));document.getElementById("listingTitle").textContent="Search: "+q;document.getElementById("listingGrid").innerHTML=list.map(card).join("")||`<div class="empty" style="grid-column:1/-1">কোনো খবর পাওয়া যায়নি।</div>`;showView("listingView")}
-function openArticle(id){let n=allNews.find(x=>x.id===id);if(!n)return;let video=validUrl(n.videoUrl);document.getElementById("articleView").innerHTML=`<article class="article-box"><span class="category">${safe(n.category||"News")}</span><h1>${safe(textFor(n,"title"))}</h1><div class="meta">${dateText(n.createdAt)} · DURGAPUR BUZZ</div><img class="article-cover" src="${safe(validUrl(n.imageUrl)||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div class="article-body">${safe(textFor(n,"body")||textFor(n,"excerpt"))}</div>${video?`<p><a class="btn" href="${safe(video)}" target="_blank" rel="noopener">ভিডিও দেখুন</a></p>`:""}<hr style="border:0;border-top:1px solid var(--line);margin:25px 0"><button class="btn ghost" onclick="goHome()">← ${t("home")}</button></article>`;showView("articleView");window.scrollTo(0,0);location.hash="news-"+id}
+function openArticle(id){let n=allNews.find(x=>x.id===id);if(!n)return;let video=validUrl(n.videoUrl);document.getElementById("articleView").innerHTML=`<article class="article-box"><span class="category">${safe(n.category||"News")}</span><h1>${safe(textFor(n,"title"))}</h1><div class="meta">${dateText(n.createdAt)} · DURGAPUR BUZZ</div><img class="article-cover" src="${safe(validUrl(n.imageUrl)||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div class="article-body">${safe(textFor(n,"body")||textFor(n,"excerpt"))}</div>${validUrl(n.facebookPostUrl)?`<p><a class="btn" href="${safe(validUrl(n.facebookPostUrl))}" target="_blank" rel="noopener noreferrer">ফেসবুকে মূল খবর দেখুন</a></p>`:""}${video?`<p><a class="btn" href="${safe(video)}" target="_blank" rel="noopener">ভিডিও দেখুন</a></p>`:""}<hr style="border:0;border-top:1px solid var(--line);margin:25px 0"><button class="btn ghost" onclick="goHome()">← ${t("home")}</button></article>`;showView("articleView");window.scrollTo(0,0);location.hash="news-"+id}
 function dbDiag(msg){}
 async function loadData(){
  dbDiag("Page script started; loading Firestore...");
@@ -128,7 +128,7 @@ async function openAdminPanel(){if(!currentUser||currentUser.uid!==ADMIN_UID){op
 function closeAdmin(){closeModal("adminModal")}
 async function logoutAdmin(){await auth.signOut();closeAdmin()}
 function showAdminTab(id){["newsTab","tickerTab","settingsTab"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));if(id==="tickerTab")fillTickerForm()}
-function resetNewsForm(){["editId","category","imageUrl","videoUrl","newsTitle","newsExcerpt","newsBody"].forEach(id=>document.getElementById(id).value="");document.getElementById("sourceLang").value="bn";document.getElementById("featured").checked=false;document.getElementById("status").value="published";document.getElementById("newsFormHeading").textContent="নতুন খবর প্রকাশ করুন"}
+function resetNewsForm(){["editId","category","imageUrl","facebookPostUrl","videoUrl","newsTitle","newsBody"].forEach(id=>document.getElementById(id).value="");document.getElementById("sourceLang").value="bn";document.getElementById("featured").checked=false;document.getElementById("status").value="published";document.getElementById("newsFormHeading").textContent="নতুন খবর প্রকাশ করুন"}
 async function translateText(text,from,to){
  if(!text||from===to)return text||"";
  const langMap={bn:"bn",hi:"hi",en:"en"};
@@ -149,19 +149,19 @@ async function saveNews(){
  if(!currentUser||currentUser.uid!==ADMIN_UID)return alert("Admin permission required");
  const from=document.getElementById("sourceLang").value;
  const title=document.getElementById("newsTitle").value.trim();
- const excerpt=document.getElementById("newsExcerpt").value.trim();
  const body=document.getElementById("newsBody").value.trim();
  if(!title||!body)return alert("শিরোনাম ও সম্পূর্ণ খবর লিখুন");
  const notice=document.getElementById("translationNotice");
  notice.textContent="অনুবাদ হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।";
  try{
-  const [titles,excerpts,bodies]=await Promise.all([translateAll(title,from),translateAll(excerpt,from),translateAll(body,from)]);
+  const [titles,bodies]=await Promise.all([translateAll(title,from),translateAll(body,from)]);
   const data={
    category:document.getElementById("category").value.trim(),
    imageUrl:validUrl(document.getElementById("imageUrl").value),
    videoUrl:validUrl(document.getElementById("videoUrl").value),
+   facebookPostUrl:validUrl(document.getElementById("facebookPostUrl").value),
    titleBn:titles.bn,titleHi:titles.hi,titleEn:titles.en,
-   excerptBn:excerpts.bn,excerptHi:excerpts.hi,excerptEn:excerpts.en,
+   excerptBn:"",excerptHi:"",excerptEn:"",
    bodyBn:bodies.bn,bodyHi:bodies.hi,bodyEn:bodies.en,
    sourceLang:from,status:document.getElementById("status").value,
    featured:document.getElementById("featured").checked,
@@ -182,9 +182,9 @@ function editNews(id){
  document.getElementById("category").value=n.category||"";
  document.getElementById("imageUrl").value=n.imageUrl||"";
  document.getElementById("videoUrl").value=n.videoUrl||"";
+ document.getElementById("facebookPostUrl").value=n.facebookPostUrl||"";
  const lang=n.sourceLang||"bn";document.getElementById("sourceLang").value=lang;
  document.getElementById("newsTitle").value=n["title"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.titleBn||n.titleEn||"";
- document.getElementById("newsExcerpt").value=n["excerpt"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.excerptBn||n.excerptEn||"";
  document.getElementById("newsBody").value=n["body"+({bn:"Bn",hi:"Hi",en:"En"}[lang]||"Bn")]||n.bodyBn||n.bodyEn||"";
  document.getElementById("status").value=n.status||"draft";
  document.getElementById("featured").checked=!!n.featured;

@@ -69,7 +69,7 @@ footer .brand h1{color:#fff!important;text-shadow:none!important}footer .brand s
 @media(max-width:650px){#blogsGrid{grid-template-columns:1fr;gap:18px}#blogsGrid .blog-cover{height:220px}.hero{padding-top:25px}}
 
 
-/* Full-page admin workspace with all navigation groups expanded */
+/* Full-page admin workspace: every admin option is an individual arrow accordion */
 #adminModal{padding:0;align-items:stretch;justify-content:stretch;background:#07110feF;}
 #adminModal .modalbox{width:100%;height:100dvh;max-height:none;max-width:none;border:0;border-radius:0;padding:0;display:flex;flex-direction:column;overflow:hidden;background:#f3f7f6;color:#172a25;box-shadow:none;}
 #adminModal .modalhead{flex:0 0 auto;padding:14px 20px;background:linear-gradient(110deg,#062f26,#07533e);border:0;color:#fff;}
@@ -77,12 +77,12 @@ footer .brand h1{color:#fff!important;text-shadow:none!important}footer .brand s
 #adminModal #adminIdentity{color:#b7dfce!important;}
 #adminModal .admin-layout{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;overflow:hidden;}
 #adminModal .side-tabs{display:block;overflow-y:auto;padding:14px;background:#e8f0ed;border-right:1px solid #d0dfd9;}
-#adminModal .admin-nav-group{margin:0 0 9px;border:1px solid #d2e1da;background:#fff;border-radius:11px;overflow:hidden;}
+#adminModal .admin-nav-group{margin:0 0 8px;border:1px solid #d2e1da;background:#fff;border-radius:11px;overflow:hidden;}
 #adminModal .admin-nav-group summary{list-style:none;display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer;font-weight:700;font-size:13px;color:#174c3b;user-select:none;}
 #adminModal .admin-nav-group summary::-webkit-details-marker{display:none;}
 #adminModal .admin-nav-group summary:after{content:'›';margin-left:auto;font-size:22px;line-height:14px;color:#16845e;transition:transform .18s;}
 #adminModal .admin-nav-group[open] summary:after{transform:rotate(90deg);}
-#adminModal .admin-nav-items{padding:2px 7px 8px;display:grid;gap:4px;}
+#adminModal .admin-nav-items{padding:2px 7px 8px;display:grid;gap:4px;background:#f8fbf9;}
 #adminModal .side-tabs .tab{display:flex;width:100%;align-items:center;justify-content:flex-start;text-align:left;white-space:normal;padding:8px 10px;border:0;border-radius:7px;background:transparent;color:#50645c;font-size:12px;box-shadow:none;}
 #adminModal .side-tabs .tab:before{content:'•';font-size:16px;margin-right:8px;color:#1b9b70;}
 #adminModal .side-tabs .tab.active{background:#e0f4eb;color:#075b3e;font-weight:700;}
@@ -167,7 +167,7 @@ function openAdmin(){if(user&&user.uid===ADMIN_UID)showAdmin();else openModal('l
 async function loginAdmin(){ $('loginError').textContent='';try{let c=await auth.signInWithEmailAndPassword($('loginEmail').value,$('loginPassword').value);if(c.user.uid!==ADMIN_UID){await auth.signOut();throw Error('এই অ্যাকাউন্টটি অনুমোদিত Super Admin নয়।')}closeModal('loginModal');showAdmin()}catch(e){$('loginError').textContent=e.message}}
 auth.onAuthStateChanged(u=>{user=u;if(u&&u.uid!==ADMIN_UID)auth.signOut()});
 const tabs=[['dashboard','Dashboard'],['services','Services'],['tools','Online Tools'],['government','Government Info'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['notices','Notice Board'],['announcements','Announcements'],['settings','Website Settings'],['suggestions','Suggestions']];let currentTab='dashboard',editKey=null,editId=null;
-function adminNavigation(){const groups=[['Overview','▦',[['dashboard','Dashboard']]],['Content Management','▤',tabs.filter(([k])=>['services','tools','government','forms','businesses','blogs'].includes(k))],['Notices & Messages','✉',tabs.filter(([k])=>['notices','announcements','suggestions'].includes(k))],['Website Controls','⚙',tabs.filter(([k])=>['settings'].includes(k))]];$('adminTabs').innerHTML=groups.map(([label,icon,items])=>`<details class=\"admin-nav-group\" ${items.some(([k])=>k===currentTab)?'open':''}><summary><span>${icon}</span>${label}</summary><div class=\"admin-nav-items\">${items.map(([k,n])=>`<button class=\"btn ghost tab ${k===currentTab?'active':''}\" onclick=\"selectTab('${k}')\">${n}</button>`).join('')}</div></details>`).join('')}
+function adminNavigation(){const icons={dashboard:'▦',services:'🧰',tools:'⚙',government:'🏛',forms:'📄',businesses:'🏪',blogs:'📚',notices:'🔔',announcements:'📢',suggestions:'✉',settings:'⚙'};$('adminTabs').innerHTML=tabs.map(([k,n])=>`<details class=\"admin-nav-group admin-nav-item\" ${k===currentTab?'open':''}><summary><span>${icons[k]||'›'}</span><span>${n}</span></summary><div class=\"admin-nav-items\"><button class=\"btn ghost tab ${k===currentTab?'active':''}\" onclick=\"selectTab('${k}')\">${k==='dashboard'?'Open Dashboard':'Open '+n}</button></div></details>`).join('')}
 function showAdmin(){if(!user||user.uid!==ADMIN_UID){openModal('loginModal');return}$('adminIdentity').textContent=user.email;openModal('adminModal');adminNavigation();selectTab(currentTab)}
 function selectTab(k){currentTab=k;adminNavigation();if(k==='dashboard')dashboard();else if(k==='settings')settingsForm();else if(k==='suggestions')suggestionsPanel();else contentPanel(k);$('adminContent').scrollTop=0}
 function dashboard(){$('adminContent').innerHTML=`<div class="admin-card"><h3>Welcome to DURGAPUR BUZZ Control Center</h3><p style="color:var(--muted)">ওয়েবসাইটের সব কনটেন্ট এখান থেকে পরিচালনা করুন।</p><div class="grid">${Object.entries(sections).map(([k,v])=>`<div class="card"><div class="ico">${v.icon}</div><h3>${v.label}</h3><p>${(cache[k]||[]).length} items</p><button class="btn" onclick="selectTab('${k}')">Manage</button></div>`).join('')}</div></div><div class="admin-card"><h3>Quick Actions</h3><button class="btn primary" onclick="selectTab('services')">+ Add Service</button> <button class="btn" onclick="selectTab('notices')">+ Publish Notice</button> <button class="btn purple" onclick="selectTab('settings')">Edit Homepage</button></div>`}

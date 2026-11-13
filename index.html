@@ -135,7 +135,34 @@ function renderBusinesses(){let q=$('businessSearch').value.toLowerCase(),cat=$(
 function refreshBusinessCategories(){let cats=[...new Set(activeItems('businesses').map(x=>x.category).filter(Boolean))];$('businessCategory').innerHTML='<option value="">সব ক্যাটাগরি</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('')}
 function renderNotices(key,id){let a=activeItems(key).slice(0,8);$(id).innerHTML=a.length?a.map(x=>`<div class="noticeitem"><strong>${esc(x.title)}</strong><div>${esc(x.description||'')}</div><small>${esc(x.dateLabel||'DURGAPUR BUZZ')}</small></div>`).join(''):'<div class="noticeitem">এই মুহূর্তে কোনো আপডেট নেই।</div>'}
 function applySettings(){let s=settings;$('siteName').textContent=s.siteName||'DURGAPUR BUZZ';$('tagline').textContent=s.tagline||'YOUR LOCAL DIGITAL ASSISTANT';$('footerTagline').textContent=s.tagline||'YOUR LOCAL DIGITAL ASSISTANT';$('heroEyebrow').textContent=s.heroEyebrow||'YOUR LOCAL DIGITAL ASSISTANT';$('heroTitle').innerHTML=esc(s.heroTitle||'আপনার এলাকার ডিজিটাল পরিষেবা, এখন এক জায়গায়।').replace('ডিজিটাল পরিষেবা','<span>ডিজিটাল পরিষেবা</span>');$('heroDesc').textContent=s.heroDesc||'সরকারি তথ্য, অনলাইন টুলস, প্রয়োজনীয় ফর্ম, স্থানীয় ব্যবসা এবং দরকারি পরিষেবা—সহজে খুঁজুন DURGAPUR BUZZ-এ।';$('footerAbout').textContent=s.about||'দুর্গাপুর ও পশ্চিম বর্ধমানের দরকারি ডিজিটাল পরিষেবা, তথ্য ও স্থানীয় ব্যবসার ঠিকানা।';$('footerContact').textContent=s.address||'Durgapur, Paschim Bardhaman, West Bengal';$('footerEmail').href='mailto:'+(s.email||'thedurgapurbuzz@gmail.com');$('footerEmail').textContent=s.email||'thedurgapurbuzz@gmail.com';$('tickerText').textContent=s.ticker||'Durgapur-এর দরকারি পরিষেবা এখন এক জায়গায়।';$('logoBox').innerHTML=s.logoUrl&&urlOk(s.logoUrl)?`<img src="${esc(urlOk(s.logoUrl))}" style="width:100%;height:100%;object-fit:contain;border-radius:14px" onerror="this.parentElement.textContent='DB'">`:'DB';$('footerFacebook').href=urlOk(s.facebook)||'#';$('footerInstagram').href=urlOk(s.instagram)||'#';$('footerYoutube').href=urlOk(s.youtube)||'#';$('headWhatsApp').href=s.whatsapp?'https://wa.me/'+String(s.whatsapp).replace(/\D/g,''):'#contact';if(s.accent){document.documentElement.style.setProperty('--cyan',s.accent)}if(s.purple){document.documentElement.style.setProperty('--purple',s.purple)}}
-async function loadPublic(){try{let keys=Object.keys(sections);await Promise.all(keys.map(async k=>{let snap=await db.collection(sections[k].col).get();cache[k]=snap.docs.map(d=>({id:d.id,...d.data()}))}));let ss=await db.collection('site').doc('settings').get();settings=ss.exists?ss.data():{};applySettings();renderGrid('servicesGrid',activeItems('services'),'🧰','এখনও কোনো পরিষেবা যোগ করা হয়নি।');renderGrid('toolsGrid',activeItems('tools'),'⚙️','এখনও কোনো Tool যোগ করা হয়নি।');renderGrid('governmentGrid',activeItems('government'),'🏛️','সরকারি তথ্য শীঘ্রই যোগ করা হবে।');renderGrid('formsGrid',activeItems('forms'),'📄','এখনও কোনো ফর্ম যোগ করা হয়নি।');renderBusinesses();refreshBusinessCategories();renderGrid('blogsGrid',activeItems('blogs'),'📚','এখনও কোনো গাইড প্রকাশিত হয়নি।');renderNotices('notices','noticeList');renderNotices('announcements','announcementList');$('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length}catch(e){console.error(e);document.querySelectorAll('.loading').forEach(x=>x.textContent='ডেটা লোড হয়নি। Firebase Firestore Rules পরীক্ষা করুন।')}}
+async function loadPublic(){
+ // Public reads must match Firestore Rules: only published documents are readable.
+ // Read each collection independently so one empty/denied collection cannot hide all content.
+ const readPublished=async(col)=>{try{const snap=await db.collection(col).where('status','==','published').get();return snap.docs.map(d=>({id:d.id,...d.data()}));}catch(err){console.error('Firestore read failed for '+col+':',err);return [];}};
+ const keys=Object.keys(sections);
+ await Promise.all(keys.map(async k=>{cache[k]=await readPublished(sections[k].col);}));
+ // Backward compatibility: keep showing articles saved in the original /news collection.
+ // No migration or deletion is performed; old documents are adapted for the Guides/Blogs cards.
+ const legacyNews=await readPublished('news');
+ const legacyBlogItems=legacyNews.map(x=>({
+   ...x, __legacyNews:true, title:x.title||x.headline||'Untitled',
+   description:x.description||x.excerpt||(typeof x.body==='string'?x.body.replace(/<[^>]*>/g,' ').slice(0,220):''),
+   imageUrl:x.imageUrl||x.image||x.thumbnailUrl||x.photoUrl||'',
+   category:x.category||'পুরোনো খবর',
+   url:x.url||x.articleUrl||'', dateLabel:x.dateLabel||x.date||''
+ }));
+ cache.blogs=[...(cache.blogs||[]),...legacyBlogItems];
+ try{const ss=await db.collection('site').doc('settings').get();settings=ss.exists?ss.data():{};}catch(err){console.error('Website settings read failed:',err);settings={};}
+ applySettings();
+ renderGrid('servicesGrid',activeItems('services'),'🧰','এখনও কোনো পরিষেবা যোগ করা হয়নি।');
+ renderGrid('toolsGrid',activeItems('tools'),'⚙️','এখনও কোনো Tool যোগ করা হয়নি।');
+ renderGrid('governmentGrid',activeItems('government'),'🏛️','সরকারি তথ্য শীঘ্রই যোগ করা হবে।');
+ renderGrid('formsGrid',activeItems('forms'),'📄','এখনও কোনো ফর্ম যোগ করা হয়নি।');
+ renderBusinesses();refreshBusinessCategories();
+ renderGrid('blogsGrid',activeItems('blogs'),'📚','এখনও কোনো গাইড প্রকাশিত হয়নি।');
+ renderNotices('notices','noticeList');renderNotices('announcements','announcementList');
+ $('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length;
+}
 function openAdmin(){if(user&&user.uid===ADMIN_UID)showAdmin();else openModal('loginModal')}
 async function loginAdmin(){ $('loginError').textContent='';try{let c=await auth.signInWithEmailAndPassword($('loginEmail').value,$('loginPassword').value);if(c.user.uid!==ADMIN_UID){await auth.signOut();throw Error('এই অ্যাকাউন্টটি অনুমোদিত Super Admin নয়।')}closeModal('loginModal');showAdmin()}catch(e){$('loginError').textContent=e.message}}
 auth.onAuthStateChanged(u=>{user=u;if(u&&u.uid!==ADMIN_UID)auth.signOut()});

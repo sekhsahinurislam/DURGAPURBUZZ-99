@@ -1,1 +1,1 @@
-Replace the repository index.html with this file and commit. Diagnostic panel now reports Firebase SDK CDN loading and initialization errors. Do not change Firestore rules for this test.
+DURGAPUR BUZZ final fix. Replace repository index.html with this index.html and commit. Fix: removed fatal null textContent access to missing #todayLine element, which prevented loadData() from running after refresh. No Firestore rules changes required.

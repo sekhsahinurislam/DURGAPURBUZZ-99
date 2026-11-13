@@ -232,7 +232,8 @@ async function saveSettings(){
  }catch(e){console.error("Settings save/verify error:",e);alert("Settings Save হয়নি: "+e.message)}
  finally{if(button){button.disabled=false;button.textContent="Save Website Settings"}}
 }
-document.getElementById("todayLine").textContent=new Date().toLocaleDateString("bn-BD",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+const todayLine=document.getElementById("todayLine");
+if(todayLine) todayLine.textContent=new Date().toLocaleDateString("bn-BD",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 loadData();
 </script>
 </body>

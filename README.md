@@ -1,8 +1,20 @@
-# DURGAPUR BUZZ — refreshed visual theme
+# DURGAPUR BUZZ — Local Digital Service Hub
 
-- Updated the full public website UI with a clean, modern, rounded-card, blue/teal visual system inspired by the supplied Open Concept Bangla reference.
-- Kept DURGAPUR BUZZ name and existing dynamic logo setting. The logo remains editable from Admin → Settings → Logo Image URL.
-- No public user login page was added. Existing protected Admin Login remains available for the site administrator.
-- Preserved existing Firebase Auth/Firestore integration, News, Facebook Posts, Breaking Headlines, Settings, and article views.
+Static HTML/CSS/JavaScript website using the existing Firebase project `durgapur-buzz`.
 
-Deploy by replacing the repository's `index.html` with this file. Existing Firestore data and rules are not changed by this UI update.
+## Deploy
+1. Upload `index.html` to the existing GitHub Pages repository (replace the old homepage).
+2. In Firebase Console → Firestore Database → Rules, publish the supplied `firestore.rules`.
+3. In Firebase Console → Storage → Rules, publish the supplied `storage.rules` if/when you enable Storage uploads.
+4. Keep the existing Firebase Authentication Email/Password admin user. Admin access is restricted in the client to the existing Super Admin UID configured in `index.html`.
+5. Open the site and click **Admin Login**.
+
+## Admin-managed collections
+`services`, `tools`, `government`, `forms`, `businesses`, `blogs`, `notices`, `announcements`, `suggestions`, and `site/settings`.
+
+## Notes
+- Existing Firebase project ID, API config, Admin UID, and `site/settings` document are retained.
+- The old `news` collection is not deleted or migrated. This build is a local digital service hub, not a news portal.
+- Add a title and status when creating content. Use `Published` to show it publicly, `Draft` to keep it hidden, and `Hidden` to temporarily hide it.
+- This version accepts image/PDF URLs in content forms. Firebase Storage rules are included for a future upload control; the upload UI is not yet enabled in this build.
+- Admin UID checks in the interface are not a substitute for Firestore Rules. Publish the rules before using the new collections.

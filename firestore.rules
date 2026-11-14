@@ -28,10 +28,10 @@ service cloud.firestore {
 
     // New service-hub collections. Public queries must filter status == published.
     match /{collection}/{itemId} {
-      allow read: if collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts"]
+      allow read: if collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events"]
         && (resource.data.status == "published" || isAdmin());
       allow create, update, delete: if isAdmin()
-        && collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts"];
+        && collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events"];
     }
 
     // Public suggestion submission; only Super Admin can read or manage submissions.

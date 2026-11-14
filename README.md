@@ -21,3 +21,10 @@ Static HTML/CSS/JavaScript website using the existing Firebase project `durgapur
 
 
 Admin update: Hero Slider Control is now a separate option under Website Control. Homepage & Website Settings no longer contains the slide editor.
+
+
+EVENTS SECTION UPDATE
+- Added Events section with Active Events and Upcoming Events tabs.
+- Admin menu: Content Management > Events. Admin can add/edit/publish/draft/hide/delete events.
+- Event fields: title, event type, artist name, date, time, location, description, image URL, event status.
+- Firestore rules include events: public reads only published records; admin UID controls writes. Publish included firestore.rules in Firebase Console.

@@ -234,6 +234,14 @@ html.admin-open,body.admin-open{overflow:hidden!important;height:100%!important}
 /* Hero slider proportion matched to the supplied mobile screenshot: approx 608x744 (0.82:1). */
 @media(max-width:600px){#heroMain{width:100%;aspect-ratio:0.82/1;min-height:0;height:auto;padding:22px 17px;background-repeat:no-repeat!important;background-size:cover!important;background-position:center!important}}
 
+
+/* Compact six-item quick links in hero */
+.hero-side.quick-links-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:center;gap:9px;padding:12px!important}
+.hero-side.quick-links-grid .mini-stat{min-width:0;min-height:76px;padding:10px 11px!important;border-radius:12px;background:#fff;color:#174638;border:1px solid #d9e8e1;box-shadow:0 5px 14px rgba(12,60,45,.07)}
+.hero-side.quick-links-grid .mini-stat strong{font:700 17px 'Orbitron',sans-serif;color:#16866e;line-height:1.15;margin-bottom:5px}
+.hero-side.quick-links-grid .mini-stat span{font-size:12px!important;line-height:1.25;color:#52665f}
+@media(max-width:600px){.hero-side.quick-links-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:10px!important;margin-top:8px}.hero-side.quick-links-grid .mini-stat{min-height:66px;padding:8px 9px!important}.hero-side.quick-links-grid .mini-stat strong{font-size:15px}.hero-side.quick-links-grid .mini-stat span{font-size:11px!important}}
+
 /* Clickable hero quick-link boxes */
 .hero-side .mini-stat-link{display:block;text-decoration:none!important;color:inherit;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .hero-side .mini-stat-link:hover,.hero-side .mini-stat-link:focus-visible{transform:translateY(-2px);border-color:#168c83;box-shadow:0 8px 20px rgba(22,140,131,.14);outline:none}
@@ -291,12 +299,34 @@ html.admin-open,body.admin-open{overflow:hidden!important;height:100%!important}
 @media(min-width:801px){#suggestion .suggest{grid-template-columns:1fr 1fr;gap:18px;padding:20px 24px}}
 </style>
 <style id="event-four-tabs-style">.event-tabs-four{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px!important;width:100%;align-items:stretch}.event-tabs-four .event-tab{min-width:0!important;width:100%;padding:9px 4px!important;font-size:clamp(9px,2.5vw,13px)!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-suggest-toggle{border:1px solid var(--cyan,#22d3ee)!important}.event-suggest-toggle.active{background:var(--cyan,#22d3ee)!important;color:#07111f!important}.event-suggest-box{max-width:100%;}.event-suggest-box .field{margin:6px 0}.event-suggest-box .field input,.event-suggest-box .field select,.event-suggest-box .field textarea{width:100%;box-sizing:border-box}@media(max-width:360px){.event-tabs-four{gap:3px!important}.event-tabs-four .event-tab{padding:8px 2px!important;font-size:9px!important}}</style>
+<style id="hero-left-corner-compact">
+/* Hero slider: compact text anchored to the left-bottom corner */
+.hero-slide-content{
+  width:56% !important; height:100% !important; min-height:0 !important;
+  margin:0 auto 0 0 !important; padding:14px 16px !important;
+  display:flex !important; flex-direction:column !important;
+  align-items:flex-start !important; justify-content:flex-end !important;
+  text-align:left !important; gap:3px !important;
+}
+.hero-slide-content .eyebrow{font-size:clamp(7px,.65vw,8px) !important; line-height:1.15 !important; text-align:left !important; margin:0 !important}
+.hero-slide-content h2{font-size:clamp(14px,1.65vw,22px) !important; line-height:1.12 !important; min-height:0 !important; max-height:2.24em !important; margin:3px 0 !important; text-align:left !important}
+.hero-slide-content p{font-size:clamp(8px,.72vw,10px) !important; line-height:1.25 !important; min-height:0 !important; max-height:2.5em !important; margin:0 !important; text-align:left !important}
+.hero-slide-content .hero-buttons{justify-content:flex-start !important; margin-top:5px !important; gap:5px !important}
+.hero-slide-content .hero-buttons .btn{font-size:clamp(7px,.65vw,9px) !important; padding:4px 7px !important; border-radius:7px !important}
+@media(max-width:600px){
+ .hero-slide-content{width:62% !important;padding:10px 12px !important;justify-content:flex-end !important;align-items:flex-start !important;text-align:left !important}
+ .hero-slide-content .eyebrow{font-size:8px !important}
+ .hero-slide-content h2{font-size:clamp(12px,3.2vw,16px) !important;line-height:1.1 !important;max-height:2.2em !important}
+ .hero-slide-content p{font-size:clamp(7px,1.9vw,9px) !important;line-height:1.2 !important;max-height:2.4em !important}
+ .hero-slide-content .hero-buttons .btn{font-size:8px !important;padding:3px 6px !important}
+}
+</style>
 </head>
 <body>
 <nav class="nav"><div class="wrap navrow" id="mainNav"><a class="brand navbrand" href="#home"><div class="logo" id="logoBox">DB</div><div><h1 id="siteName">DURGAPUR BUZZ</h1><small id="tagline" class="hidden">YOUR LOCAL DIGITAL ASSISTANT</small></div></a><div class="menu-wrap"><button class="menu-trigger" id="menuTrigger" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="siteMenu" onclick="toggleSiteMenu(event)"><span></span><span></span><span></span></button><div class="site-menu" id="siteMenu"><a id="headWhatsApp" class="hidden" href="#contact">Contact</a><a href="#home" onclick="closeSiteMenu()">⌂ &nbsp; Home</a><a href="#services" onclick="closeSiteMenu()">▣ &nbsp; Services</a><a href="#tools" onclick="closeSiteMenu()">⚙ &nbsp; Online Tools</a><a href="#government" onclick="closeSiteMenu()">▤ &nbsp; Govt. Info</a><a href="#downloads" onclick="closeSiteMenu()">⇩ &nbsp; Downloads</a><a href="#directory" onclick="closeSiteMenu()">⌖ &nbsp; Business Directory</a><a href="#events" onclick="closeSiteMenu()">🎉 &nbsp; Events</a><a href="#guides" onclick="closeSiteMenu()">▧ &nbsp; Guides</a><a href="#contact" onclick="closeSiteMenu()">✉ &nbsp; Contact</a><button class="btn navadmin" onclick="closeSiteMenu();openAdmin()">Admin Login</button></div></div></div></nav>
 <main id="home">
 <div class="wrap"><div class="ticker"><b>BUZZ UPDATE</b><marquee id="tickerText" scrollamount="4">Durgapur-এর দরকারি পরিষেবা এখন এক জায়গায়।</marquee></div></div>
-<section class="wrap hero"><div class="hero-main" id="heroMain"><div class="hero-slider-controls" id="heroSliderControls" aria-label="Hero slides"></div><div class="hero-slide-content" id="heroSlideContent"><div class="eyebrow" id="heroEyebrow">YOUR LOCAL DIGITAL ASSISTANT</div><h2 id="heroTitle">আপনার এলাকার <span>ডিজিটাল পরিষেবা</span>, এখন এক জায়গায়।</h2><p id="heroDesc">সরকারি তথ্য, অনলাইন টুলস, প্রয়োজনীয় ফর্ম, স্থানীয় ব্যবসা এবং দরকারি পরিষেবা—সহজে খুঁজুন DURGAPUR BUZZ-এ।</p><div class="hero-buttons"><a class="btn primary" id="heroButton1" href="#services">পরিষেবা দেখুন ↗</a><a class="btn purple" id="heroButton2" href="#directory">লোকাল বিজনেস খুঁজুন</a></div></div></div><div class="hero-side"><a class="mini-stat mini-stat-link" href="#services" aria-label="দরকারি পরিষেবা দেখুন"><strong id="statServices">—</strong><span>দরকারি পরিষেবা ↗</span></a><a class="mini-stat mini-stat-link" href="#tools" aria-label="অনলাইন টুলস দেখুন"><strong id="statTools">—</strong><span>অনলাইন টুলস ↗</span></a><a class="mini-stat mini-stat-link" href="#directory" aria-label="লোকাল বিজনেস দেখুন"><strong id="statBusinesses">—</strong><span>লোকাল বিজনেস ↗</span></a></div></section>
+<section class="wrap hero"><div class="hero-main" id="heroMain"><div class="hero-slider-controls" id="heroSliderControls" aria-label="Hero slides"></div><div class="hero-slide-content" id="heroSlideContent"><div class="eyebrow" id="heroEyebrow">YOUR LOCAL DIGITAL ASSISTANT</div><h2 id="heroTitle">আপনার এলাকার <span>ডিজিটাল পরিষেবা</span>, এখন এক জায়গায়।</h2><p id="heroDesc">সরকারি তথ্য, অনলাইন টুলস, প্রয়োজনীয় ফর্ম, স্থানীয় ব্যবসা এবং দরকারি পরিষেবা—সহজে খুঁজুন DURGAPUR BUZZ-এ।</p><div class="hero-buttons"><a class="btn primary" id="heroButton1" href="#services">পরিষেবা দেখুন ↗</a><a class="btn purple" id="heroButton2" href="#directory">লোকাল বিজনেস খুঁজুন</a></div></div></div><div class="hero-side quick-links-grid"><a class="mini-stat mini-stat-link" href="#services" aria-label="দরকারি পরিষেবা দেখুন"><strong id="statServices">—</strong><span>দরকারি পরিষেবা ↗</span></a><a class="mini-stat mini-stat-link" href="#tools" aria-label="অনলাইন টুলস দেখুন"><strong id="statTools">—</strong><span>অনলাইন টুলস ↗</span></a><a class="mini-stat mini-stat-link" href="#directory" aria-label="লোকাল বিজনেস দেখুন"><strong id="statBusinesses">—</strong><span>লোকাল বিজনেস ↗</span></a><a class="mini-stat mini-stat-link" href="#government" aria-label="সরকারি তথ্য দেখুন"><strong id="statGovernment">—</strong><span>সরকারি তথ্য ↗</span></a><a class="mini-stat mini-stat-link" href="#downloads" aria-label="ফর্ম ও ডাউনলোড দেখুন"><strong id="statForms">—</strong><span>ফর্ম ও ডাউনলোড ↗</span></a><a class="mini-stat mini-stat-link" href="#events" aria-label="ইভেন্ট দেখুন"><strong id="statEvents">—</strong><span>ইভেন্ট ↗</span></a></div></section>
 <section class="wrap section" id="notices"><div class="noticegrid"><div class="noticebox"><h3>📢 Notice Board</h3><div id="noticeList" class="loading">নোটিস লোড হচ্ছে...</div></div><div class="noticebox"><h3>⚡ Latest Announcements</h3><div id="announcementList" class="loading">আপডেট লোড হচ্ছে...</div></div></div></section>
 <section class="wrap section" id="services"><div class="sectionhead"><div><h2>দুর্গাপুরের দরকারি পরিষেবা</h2><div class="neon-line"></div></div><a class="btn ghost" href="#contact">সব পরিষেবা ↗</a></div><div class="grid" id="servicesGrid"><div class="empty">পরিষেবা লোড হচ্ছে...</div></div></section>
 <section class="wrap section" id="tools"><div class="sectionhead"><div><h2>Online Tools</h2><div class="neon-line"></div><p>দৈনন্দিন ডিজিটাল কাজের সহজ টুলস</p></div></div><div class="grid" id="toolsGrid"><div class="empty">টুলস লোড হচ্ছে...</div></div></section>
@@ -438,7 +468,7 @@ async function loadPublic(){
  renderBusinesses();refreshBusinessCategories();
  renderGrid('blogsGrid',activeItems('blogs'),'📚','এখনও কোনো গাইড প্রকাশিত হয়নি।');
  renderNotices('notices','noticeList');renderNotices('announcements','announcementList');await loadSocialPosts();
- $('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length;
+ $('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length;$('statGovernment').textContent=activeItems('government').length;$('statForms').textContent=activeItems('forms').length;$('statEvents').textContent=(cache.events||[]).filter(x=>x.status==='published').length;
 }
 function openAdmin(){if(user&&user.uid===ADMIN_UID)showAdmin();else openModal('loginModal')}
 async function loginAdmin(){ $('loginError').textContent='';try{let c=await auth.signInWithEmailAndPassword($('loginEmail').value,$('loginPassword').value);if(c.user.uid!==ADMIN_UID){await auth.signOut();throw Error('এই অ্যাকাউন্টটি অনুমোদিত Super Admin নয়।')}closeModal('loginModal');showAdmin()}catch(e){$('loginError').textContent=e.message}}
@@ -500,30 +530,51 @@ async function fetchSocialThumbnail(){
   if(platform==='youtube'){
    const videoId=youtubeVideoId(url);
    if(!videoId)throw new Error('YouTube URL সঠিক নয়। watch, youtu.be, Shorts বা Live URL দিন।');
-   // Fetch the real video title and thumbnail metadata from YouTube oEmbed.
    image='https://i.ytimg.com/vi/'+videoId+'/hqdefault.jpg';
-   try{const meta=await fetchYouTubeMetadata(url);title=meta.title||'';image=meta.thumbnail||image;}
-   catch(metaError){console.warn('YouTube title fetch failed; using thumbnail fallback',metaError);title='';}
-   const probe=new Image();
-   await new Promise((resolve,reject)=>{probe.onload=resolve;probe.onerror=()=>reject(new Error('YouTube Thumbnail পাওয়া যায়নি; Image URL হাতে দিন।'));probe.src=image});
-   if(!title)throw new Error('Thumbnail পাওয়া গেছে, কিন্তু YouTube থেকে Title আনা যায়নি। Post Title নিজে লিখে দিন।');
+   try{const meta=await fetchYouTubeMetadata(url);title=meta.title||'';image=meta.thumbnail||image;}catch(metaError){console.warn('YouTube metadata:',metaError)}
+  }else if(platform==='instagram'){
+   const clean=url.split('?')[0].replace(/\/$/,'');
+   const shortcode=(clean.match(/\/(?:p|reel|reels|tv)\/([^/]+)/i)||[])[1];
+   if(!shortcode)throw new Error('Instagram Post / Reel-এর সঠিক URL দিন।');
+   // First try Instagram's public oEmbed endpoint. If direct browser access is blocked,
+   // retry through a lightweight public metadata proxy and parse og:image / og:title.
+   const endpoints=[
+    'https://www.instagram.com/api/v1/oembed/?url='+encodeURIComponent(clean+'/'),
+    'https://api.allorigins.win/raw?url='+encodeURIComponent('https://www.instagram.com/p/'+shortcode+'/')
+   ];
+   for(const endpoint of endpoints){
+    try{
+     const response=await fetch(endpoint,{headers:{'Accept':'application/json,text/html'}});
+     if(!response.ok)continue;
+     const body=await response.text();
+     try{const data=JSON.parse(body);image=data.thumbnail_url||data.thumbnailUrl||image;title=data.title||data.author_name||title;description=data.author_name||description;}catch(_){
+      const doc=new DOMParser().parseFromString(body,'text/html');
+      image=doc.querySelector('meta[property="og:image"]')?.content||doc.querySelector('meta[name="twitter:image"]')?.content||image;
+      title=doc.querySelector('meta[property="og:title"]')?.content||doc.querySelector('title')?.textContent||title;
+      description=doc.querySelector('meta[property="og:description"]')?.content||description;
+     }
+     if(image)break;
+    }catch(err){console.warn('Instagram metadata endpoint unavailable:',err)}
+   }
+   if(!image)throw new Error('Instagram-এর Thumbnail পাওয়া যায়নি। পোস্টটি Public কিনা দেখুন; প্রয়োজনে Image URL হাতে দিন।');
+   if(!title)title='Instagram '+(/\/(?:reel|reels)\//i.test(clean)?'Reel':'Post');
   }else{
-   // Avoid the rate-limited Microlink API (429). Meta does not provide unrestricted
-   // public thumbnail fetching for arbitrary Facebook/Instagram URLs.
    const manual=$('spImage').value.trim();
-   if(!manual)throw new Error('Facebook / Instagram-এর Thumbnail স্বয়ংক্রিয়ভাবে নির্ভরযোগ্যভাবে আনা যায় না। Image URL ঘরে ছবির সরাসরি লিংক দিন।');
-   image=urlOk(manual);
-   if(!image)throw new Error('Image URL সঠিক নয়। সরাসরি .jpg / .png / .webp ছবির লিংক দিন।');
-   title=socialPlatformName(platform)+' Post';
+   if(!manual)throw new Error('Facebook-এর Thumbnail স্বয়ংক্রিয়ভাবে সবসময় পাওয়া যায় না। Image URL ঘরে ছবির সরাসরি লিংক দিন।');
+   image=urlOk(manual);if(!image)throw new Error('Image URL সঠিক নয়। সরাসরি .jpg / .png / .webp ছবির লিংক দিন।');
+   title='Facebook Post';
   }
+  if(!image)throw new Error('Thumbnail URL পাওয়া যায়নি।');
+  const probe=new Image();
+  await new Promise((resolve,reject)=>{probe.onload=resolve;probe.onerror=()=>reject(new Error('Thumbnail ছবিটি লোড হচ্ছে না। অন্য Image URL দিন।'));probe.src=image});
   $('spImage').value=image;
   if(!$('spTitle').value.trim())$('spTitle').value=title;
   $('socialFetchPreviewImg').onerror=()=>{status.textContent='Thumbnail লোড হয়নি। অন্য Image URL দিন।'};
   $('socialFetchPreviewImg').src=image;
   $('socialFetchPreviewTitle').textContent=$('spTitle').value.trim()||title;
-  $('socialFetchPreviewDesc').textContent=platform==='youtube'?'YouTube Thumbnail Preview':'আপনার দেওয়া Image URL-এর Preview';
+  $('socialFetchPreviewDesc').textContent=description||platform.toUpperCase()+' Thumbnail Preview';
   $('socialFetchPreview').style.display='block';
-  status.textContent='Thumbnail Preview তৈরি হয়েছে। এবার Save Social Post চাপুন।';
+  status.textContent='Thumbnail পাওয়া গেছে। Preview দেখে Save Social Post চাপুন।';
  }catch(e){console.warn('Social thumbnail fetch:',e);status.textContent='Fetch হয়নি: '+e.message}
  finally{btn.disabled=false;btn.textContent='লিংক থেকে Thumbnail Fetch করুন'}
 }

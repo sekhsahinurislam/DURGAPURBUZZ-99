@@ -122,6 +122,10 @@ html.admin-open,body.admin-open{overflow:hidden!important;height:100%!important}
 @media(max-width:700px){#adminModal .modalhead{padding:10px 12px!important;align-items:flex-start!important}#adminModal .modalhead h2{font-size:14px!important;line-height:1.35!important}#adminModal .modalhead>div:last-child{display:flex!important;gap:6px!important;flex-shrink:0!important}#adminModal .modalhead .btn{padding:7px 9px!important;font-size:12px!important}#adminModal .side-tabs{max-height:40dvh!important;padding:8px 10px!important}#adminModal .admin-content{padding:10px!important}#adminModal .formgrid{grid-template-columns:1fr!important}#adminModal .span2{grid-column:auto!important}}
 
 
+/* Admin button contrast fix for light workspace */
+#adminModal .btn.ghost{background:#ffffff!important;color:#15543f!important;border:1.5px solid #397a62!important;font-weight:700!important;opacity:1!important}
+#adminModal .btn.ghost:hover{background:#e5f4ec!important;color:#083d2c!important}
+#adminModal .btn:disabled{opacity:.65!important;color:#52665d!important}
 /* Compact nested admin navigation + full-page editor views */
 #adminModal .side-tabs{gap:5px!important;padding:8px!important;max-height:calc(100dvh - 112px)!important}
 #adminModal .admin-nav-group{border-radius:8px!important}
@@ -419,7 +423,7 @@ function adminNavigation(){
    return `<details class="admin-nav-group admin-nav-item"><summary><span class="admin-group-title">${group}</span><span class="admin-arrow">▾</span></summary><div class="admin-nav-items">${items.map(([k,n])=>`<button type="button" class="admin-subitem ${k===currentTab?'active':''}" onclick="selectTab('${k}')"><span>${icons[k]||'•'}</span><span>${n}</span><span class="admin-sub-arrow">›</span></button>`).join('')}</div></details>`;
  }).join('');
 }
-function showAdmin(){if(!user||user.uid!==ADMIN_UID){openModal('loginModal');return}$('adminIdentity').textContent=user.email;openModal('adminModal');adminNavigation();selectTab(currentTab)}
+function showAdmin(){if(!user||user.uid!==ADMIN_UID){openModal('loginModal');return}$('adminIdentity').textContent='Administrator';openModal('adminModal');adminNavigation();selectTab(currentTab)}
 function selectTab(k){currentTab=k;adminNavigation();$('adminModal').classList.add('admin-page-view');if(k==='dashboard')dashboard();else if(k==='settings')settingsForm();else if(k==='heroSlider')heroSliderAdminForm();else if(k==='suggestions')suggestionsPanel();else if(k==='buzzUpdate')buzzUpdateForm();else if(k==='socialYoutube')socialAdminPanel('youtube');else if(k==='socialFacebook')socialAdminPanel('facebook');else if(k==='socialInstagram')socialAdminPanel('instagram');else if(k==='events')eventsAdminPanel();else contentPanel(k);$('adminContent').scrollTop=0}
 function backToAdminMenu(){$('adminModal').classList.remove('admin-page-view');currentTab='dashboard';adminNavigation();dashboard()}
 function dashboard(){$('adminModal').classList.remove('admin-page-view');$('adminContent').innerHTML=`<div class="admin-card admin-welcome"><h3>DURGAPUR BUZZ Control Center</h3><p>বাম/উপরের তালিকা থেকে একটি বিভাগ খুলুন। তারপর তার নিচের ছোট অপশনে ক্লিক করলে সংশ্লিষ্ট ফর্ম এখানে দেখা যাবে।</p><p class="admin-hint">প্রথমে Parent Category → তারপর Submenu → তারপর Form।</p></div>`}
@@ -458,26 +462,30 @@ async function fetchSocialThumbnail(){
   let image='',title='',description='';
   if(platform==='youtube'){
    const videoId=youtubeVideoId(url);
-   if(!videoId)throw new Error('YouTube ভিডিও URL সঠিক নয়। youtu.be, watch, Shorts বা live URL দিন।');
+   if(!videoId)throw new Error('YouTube URL সঠিক নয়। watch, youtu.be, Shorts বা Live URL দিন।');
+   // YouTube thumbnails are public static image URLs; no external metadata API is needed.
    image='https://i.ytimg.com/vi/'+videoId+'/hqdefault.jpg';
    title='YouTube Video';
+   const probe=new Image();
+   await new Promise((resolve,reject)=>{probe.onload=resolve;probe.onerror=()=>reject(new Error('YouTube Thumbnail পাওয়া যায়নি; Image URL হাতে দিন।'));probe.src=image});
   }else{
-   // Fetch Open Graph metadata through Microlink's metadata endpoint.
-   const endpoint='https://api.microlink.io/?url='+encodeURIComponent(url)+'&screenshot=false&video=false';
-   const response=await fetch(endpoint,{headers:{'Accept':'application/json'}});
-   if(!response.ok)throw new Error('Thumbnail service উত্তর দিচ্ছে না ('+response.status+')');
-   const json=await response.json();
-   if(json.status!=='success'||!json.data)throw new Error('এই পোস্টের public thumbnail পাওয়া যায়নি');
-   image=json.data.image?.url||json.data.logo?.url||'';
-   title=json.data.title||'';description=json.data.description||'';
+   // Avoid the rate-limited Microlink API (429). Meta does not provide unrestricted
+   // public thumbnail fetching for arbitrary Facebook/Instagram URLs.
+   const manual=$('spImage').value.trim();
+   if(!manual)throw new Error('Facebook / Instagram-এর Thumbnail স্বয়ংক্রিয়ভাবে নির্ভরযোগ্যভাবে আনা যায় না। Image URL ঘরে ছবির সরাসরি লিংক দিন।');
+   image=urlOk(manual);
+   if(!image)throw new Error('Image URL সঠিক নয়। সরাসরি .jpg / .png / .webp ছবির লিংক দিন।');
+   title=socialPlatformName(platform)+' Post';
   }
-  if(!image)throw new Error('এই লিংক থেকে Thumbnail পাওয়া যায়নি। Image URL হাতে দিন।');
   $('spImage').value=image;
-  if(!$('spTitle').value.trim()&&title)$('spTitle').value=title;
-  if(!$('spDescription').value.trim()&&description)$('spDescription').value=description;
-  $('socialFetchPreviewImg').onerror=()=>{if(platform==='youtube'&&image.includes('/hqdefault.jpg')){$('socialFetchPreviewImg').onerror=null;$('socialFetchPreviewImg').src='https://img.youtube.com/vi/'+youtubeVideoId(url)+'/mqdefault.jpg'}};$('socialFetchPreviewImg').src=image;$('socialFetchPreviewTitle').textContent=$('spTitle').value.trim()||title||socialPlatformName(platform)+' Post';$('socialFetchPreviewDesc').textContent=$('spDescription').value.trim()||description||'Thumbnail Preview';$('socialFetchPreview').style.display='block';
-  status.textContent='Thumbnail পাওয়া গেছে। Preview দেখে Save Social Post চাপুন।';
- }catch(e){console.warn('Social thumbnail fetch:',e);status.textContent='Fetch হয়নি: '+e.message+' — প্রয়োজনে Image URL হাতে দিন।'}
+  if(!$('spTitle').value.trim())$('spTitle').value=title;
+  $('socialFetchPreviewImg').onerror=()=>{status.textContent='Thumbnail লোড হয়নি। অন্য Image URL দিন।'};
+  $('socialFetchPreviewImg').src=image;
+  $('socialFetchPreviewTitle').textContent=$('spTitle').value.trim()||title;
+  $('socialFetchPreviewDesc').textContent=platform==='youtube'?'YouTube Thumbnail Preview':'আপনার দেওয়া Image URL-এর Preview';
+  $('socialFetchPreview').style.display='block';
+  status.textContent='Thumbnail Preview তৈরি হয়েছে। এবার Save Social Post চাপুন।';
+ }catch(e){console.warn('Social thumbnail fetch:',e);status.textContent='Fetch হয়নি: '+e.message}
  finally{btn.disabled=false;btn.textContent='লিংক থেকে Thumbnail Fetch করুন'}
 }
 function socialAdminPanel(platform='youtube'){let box=$('adminContent');box.innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>${socialPlatformName(platform)} Content Management</h3></div><p>${socialPlatformName(platform)} ভিডিও / পোস্টের URL দিন। লিংক থেকে Thumbnail Fetch করে Preview দেখে Save করুন। Facebook ও Instagram-এর ক্ষেত্রে platform privacy/API সীমাবদ্ধতার কারণে thumbnail না এলে Image URL হাতে দিতে হবে।</p><input type="hidden" id="socialEditId"><input type="hidden" id="spPlatform" value="${platform}"><div class="formgrid"><div class="field"><label>Platform</label><input value="${socialPlatformName(platform)}" disabled></div><div class="field"><label>Status</label><select id="spStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><div class="field span2"><label>Post URL</label><input id="spUrl" type="url" placeholder="https://..." required><button class="btn ghost" type="button" id="fetchSocialThumbBtn" onclick="fetchSocialThumbnail()">লিংক থেকে Thumbnail Fetch করুন</button><small>URL দিন → Fetch চাপুন → Preview দেখে তারপর Save করুন।</small></div><div class="field span2"><div id="socialFetchPreview" style="display:none;border:1px solid var(--line);border-radius:12px;padding:10px"><img id="socialFetchPreviewImg" alt="Thumbnail preview" style="display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#eef2f0"><strong id="socialFetchPreviewTitle"></strong><p id="socialFetchPreviewDesc"></p></div></div><div class="field span2"><label>Post Title</label><input id="spTitle" placeholder="পোস্টের শিরোনাম"></div><div class="field span2"><label>Post Text / Caption</label><textarea id="spDescription" placeholder="পোস্টের লেখা বা সংক্ষিপ্ত বিবরণ"></textarea></div><div class="field span2"><label>Image URL (Facebook / Instagram-এর জন্য দিন; YouTube thumbnail auto)</label><input id="spImage" type="url" placeholder="https://... "></div></div><button class="btn primary" id="saveSocialBtn" type="button" onclick="saveSocialPost()">Save Social Post</button> <button class="btn ghost" type="button" onclick="clearSocialForm()">Clear</button><p id="socialSaveStatus" role="status"></p></div><div class="admin-card"><h3>Existing Social Posts</h3><div id="socialAdminList">Loading...</div></div>`;loadSocialAdminList()}

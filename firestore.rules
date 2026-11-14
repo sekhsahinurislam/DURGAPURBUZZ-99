@@ -9,21 +9,22 @@ service cloud.firestore {
     match /news/{newsId} {
       allow read: if (resource.data.status == "published") || isAdmin();
       allow create, update, delete: if isAdmin();
-      // Public visitor counter: only the aggregate document can be incremented by visitors.
-      match /visitorCounter {
-        allow read: if true;
-        allow create: if request.resource.data.keys().hasOnly(["count", "updatedAt"])
-          && request.resource.data.count == 1;
-        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(["count", "updatedAt"])
-          && request.resource.data.count == resource.data.count + 1;
-        allow delete: if isAdmin();
-      }
     }
 
     // Existing website settings and logo.
     match /site/{documentId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+    }
+
+    // Count every successful website opening/page load. Only the aggregate counter can be incremented publicly.
+    match /site/visitorCounter {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(["count", "updatedAt"])
+        && request.resource.data.count == 1;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(["count", "updatedAt"])
+        && request.resource.data.count == resource.data.count + 1;
+      allow delete: if isAdmin();
     }
 
     // New service-hub collections. Public queries must filter status == published.

@@ -541,36 +541,62 @@ async function fetchSocialThumbnail(){
    if(!match)throw new Error('Instagram URL-টি /p/ বা /reel/ দিয়ে শুরু হওয়া Public Post/Reel লিংক হতে হবে।');
    const permalink='https://www.instagram.com/'+match[1].toLowerCase()+'/'+match[2]+'/';
    const shortcode=match[2];
+   const isInstagramMediaImage=(value)=>{
+    if(typeof value!=='string'||!/^https?:\/\//i.test(value))return false;
+    const v=value.toLowerCase();
+    // Instagram profile avatars commonly use the t51.2885-19 image path.
+    if(/t51\.2885-19|profile[_-]?pic|profile[_-]?photo|avatar/.test(v))return false;
+    return /\.(?:jpg|jpeg|png|webp)(?:[?#]|$)|scontent|cdninstagram/.test(v);
+   };
+   const pickInstagramJson=(obj)=>{
+    if(!obj||typeof obj!=='object')return;
+    const direct=[obj.thumbnail_url,obj.display_url,obj.displayUrl,obj.thumbnail_src,obj.image_url,obj.imageUrl];
+    for(const v of direct)if(isInstagramMediaImage(v))return v;
+    const candidates=obj.image_versions2?.candidates||obj.imageVersions2?.candidates||[];
+    for(const c of candidates){if(isInstagramMediaImage(c?.url))return c.url}
+    const media=obj.graphql?.shortcode_media||obj.data?.shortcode_media||obj.data?.xdt_shortcode_media||obj.shortcode_media;
+    if(media){const v=pickInstagramJson(media);if(v)return v}
+    for(const key of ['data','items','media','carousel_media','edge_sidecar_to_children','edges','node']){
+     const child=obj[key];if(Array.isArray(child)){for(const item of child){const v=pickInstagramJson(item?.node||item);if(v)return v}}
+     else if(child&&typeof child==='object'){const v=pickInstagramJson(child);if(v)return v}
+    }
+    return '';
+   };
    const parseInstagramPayload=(body,contentType='')=>{
-    let html=body||'';
+    let html=String(body||'');
     if(contentType.includes('json')||/^\s*[\[{]/.test(html)){
-     try{const j=JSON.parse(html);const d=j.data||j;image=d.thumbnail_url||d.thumbnailUrl||d.display_url||d.image_url||image;title=d.title||d.author_name||d.caption||title;description=d.author_name||d.caption||description;html=typeof d.html==='string'?d.html:html}catch(_){ }
+     try{const j=JSON.parse(html);const d=j.data||j;const found=pickInstagramJson(d);if(found)image=found;title=d.title||d.caption?.text||title;description=d.caption?.text||d.author_name||description;html=typeof d.html==='string'?d.html:html}catch(_){ }
     }
     if(html){
      const doc=new DOMParser().parseFromString(html,'text/html');
-     const get=(...selectors)=>{for(const sel of selectors){const v=doc.querySelector(sel)?.content||doc.querySelector(sel)?.textContent;if(v&&v.trim())return v.trim()}return ''};
-     image=get('meta[property="og:image"]','meta[property="og:image:secure_url"]','meta[name="twitter:image"]')||image;
+     const get=(...selectors)=>{for(const sel of selectors){const el=doc.querySelector(sel);const v=el?.content||el?.textContent;if(v&&v.trim())return v.trim()}return ''};
+     const og=get('meta[property="og:image"]','meta[property="og:image:secure_url"]','meta[name="twitter:image"]');
+     if(isInstagramMediaImage(og))image=og;
      title=get('meta[property="og:title"]','meta[name="twitter:title"]','title')||title;
      description=get('meta[property="og:description"]','meta[name="description"]')||description;
-     if(!image){const m=html.match(/(?:display_url|thumbnail_src|thumbnail_url)["']?\s*[:=]\s*["']([^"']+)["']/i);if(m)image=m[1].replace(/\\u0026/g,'&').replace(/\\\//g,'/')}
+     if(!image){const m=html.match(/(?:display_url|thumbnail_src|thumbnail_url)["']?\s*[:=]\s*["']([^"']+)["']/i);if(m){const candidate=m[1].replace(/\\u0026/g,'&').replace(/\\\//g,'/');if(isInstagramMediaImage(candidate))image=candidate}}
     }
-    // Jina Reader sometimes returns Markdown instead of HTML; recover the first image URL.
-    if(!image){const m=String(body||'').match(/https?:\\?\/?\\?\/?[^\s)\]"']+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)\]]*)?/i);if(m)image=m[0].replace(/\\u0026/g,'&').replace(/\\\//g,'/')}
+    // Jina Reader may return Markdown containing the media image URL.
+    if(!image){const matches=String(body||'').match(/https?:[^\s)\]"']+/ig)||[];image=matches.map(v=>v.replace(/\\u0026/g,'&').replace(/\\\//g,'/')).find(isInstagramMediaImage)||''}
    };
    const targets=[
     {url:'https://www.instagram.com/api/v1/oembed/?url='+encodeURIComponent(permalink),type:'json'},
-    {url:'https://api.allorigins.win/raw?url='+encodeURIComponent(permalink),type:'html'},
-    {url:'https://corsproxy.io/?url='+encodeURIComponent(permalink),type:'html'},
-    {url:'https://r.jina.ai/https://www.instagram.com/'+match[1].toLowerCase()+'/'+shortcode+'/',type:'text'}
+    {url:'https://api.microlink.io/?url='+encodeURIComponent(permalink)+'&screenshot=false&video=false',type:'json'},
+    {url:'https://r.jina.ai/https://www.instagram.com/'+match[1].toLowerCase()+'/'+shortcode+'/',type:'text'},
+    {url:'https://api.allorigins.win/raw?url='+encodeURIComponent(permalink),type:'html'}
    ];
    for(const target of targets){
     try{
-     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);
+     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
      const response=await fetch(target.url,{headers:{'Accept':'application/json,text/html,text/plain,*/*'},signal:controller.signal});clearTimeout(timer);
      if(!response.ok)continue;
-     const body=await response.text();parseInstagramPayload(body,response.headers.get('content-type')||target.type);
+     const body=await response.text();
+     if(target.url.includes('microlink')){
+      try{const meta=JSON.parse(body);const candidate=meta?.data?.image?.url; if(isInstagramMediaImage(candidate))image=candidate;title=title||meta?.data?.title||'';description=description||meta?.data?.description||'';}catch(_){ }
+     }
+     if(!image)parseInstagramPayload(body,response.headers.get('content-type')||target.type);
      if(image)break;
-    }catch(err){console.warn('Instagram metadata source failed:',target.url,err)}
+    }catch(err){console.warn('Instagram media thumbnail source failed:',target.url,err)}
    }
    if(!image)throw new Error('Instagram নিজস্বভাবে বাইরের Thumbnail Fetch সীমিত করছে। Public পোস্ট হলেও সবসময় অটো-ফেচ সম্ভব নয়। পোস্টের Share → Copy link ব্যবহার করুন; না হলে Image URL ঘরে ছবির সরাসরি লিংক দিন।');
    if(!title)title='Instagram '+(/\/(?:reel|reels)\//i.test(permalink)?'Reel':'Post')+' · '+shortcode;

@@ -275,7 +275,6 @@ html.admin-open,body.admin-open{overflow:hidden!important;height:100%!important}
  </form>
 </div></section>
 <section class="wrap section" id="guides"><div class="sectionhead"><div><h2>Latest Guides & Updates</h2><div class="neon-line"></div></div></div><div class="grid" id="blogsGrid"><div class="empty">গাইড লোড হচ্ছে...</div></div></section>
-<section class="wrap section" id="social"><div class="sectionhead"><div><h2>Social</h2><div class="neon-line"></div><p>আমাদের Facebook, Instagram ও YouTube-এর সাম্প্রতিক পোস্ট</p></div></div><div class="grid social-grid" id="socialPostsGrid"><div class="empty">Social পোস্ট লোড হচ্ছে...</div></div></section>
 <section class="wrap section media-hub" id="youtubeSection"><div class="sectionhead"><div><h2><span class="brand-icon youtube-brand" aria-label="YouTube"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.2 3.6-6.2 3.6Z"/></svg></span> YouTube</h2><div class="neon-line"></div><p>ভিডিও সরাসরি ওয়েবসাইটে দেখুন</p></div><a class="btn ghost youtube-subscribe-btn" id="youtubeChannelLink" href="#" target="_blank" rel="noopener"><span aria-hidden="true">▶</span> Subscribe</a></div><div class="video-row" id="youtubeVideoGrid"><div class="empty">YouTube ভিডিও লিংক Admin Panel থেকে যোগ করুন।</div></div></section>
 <section class="wrap section media-hub" id="facebookSection"><div class="sectionhead"><div><h2><span class="brand-icon facebook-brand">f</span> Facebook</h2><div class="neon-line"></div><p>আমাদের Facebook পেজ</p></div><a class="btn ghost" id="facebookPageLink" href="#" target="_blank" rel="noopener">Facebook Page ↗</a></div></section>
 <section class="wrap section media-hub" id="instagramSection"><div class="sectionhead"><div><h2><span class="brand-icon instagram-brand">◎</span> Instagram</h2><div class="neon-line"></div><p>আমাদের Instagram পেজ</p></div><a class="btn ghost" id="instagramPageLink" href="#" target="_blank" rel="noopener">Instagram Page ↗</a></div></section>
@@ -391,16 +390,16 @@ async function loadPublic(){
  renderGrid('formsGrid',activeItems('forms'),'📄','এখনও কোনো ফর্ম যোগ করা হয়নি।');
  renderBusinesses();refreshBusinessCategories();
  renderGrid('blogsGrid',activeItems('blogs'),'📚','এখনও কোনো গাইড প্রকাশিত হয়নি।');
- renderNotices('notices','noticeList');renderNotices('announcements','announcementList');loadSocialPosts();
+ renderNotices('notices','noticeList');renderNotices('announcements','announcementList');
  $('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length;
 }
 function openAdmin(){if(user&&user.uid===ADMIN_UID)showAdmin();else openModal('loginModal')}
 async function loginAdmin(){ $('loginError').textContent='';try{let c=await auth.signInWithEmailAndPassword($('loginEmail').value,$('loginPassword').value);if(c.user.uid!==ADMIN_UID){await auth.signOut();throw Error('এই অ্যাকাউন্টটি অনুমোদিত Super Admin নয়।')}closeModal('loginModal');showAdmin()}catch(e){$('loginError').textContent=e.message}}
 auth.onAuthStateChanged(u=>{user=u;if(u&&u.uid!==ADMIN_UID)auth.signOut()});
-const tabs=[['dashboard','Dashboard'],['services','Services'],['tools','Online Tools'],['government','Government Info'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['events','Events'],['social','Social Posts'],['notices','Notice Board'],['announcements','Announcements'],['settings','Website Settings'],['suggestions','Suggestions'],['buzzUpdate','Buzz Update']];let currentTab='dashboard',editKey=null,editId=null;
+const tabs=[['dashboard','Dashboard'],['services','Services'],['tools','Online Tools'],['government','Government Info'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['events','Events'],['notices','Notice Board'],['announcements','Announcements'],['settings','Website Settings'],['suggestions','Suggestions'],['buzzUpdate','Buzz Update']];let currentTab='dashboard',editKey=null,editId=null;
 const adminGroups=[
  ['Dashboard',[['dashboard','Overview']]],
- ['Content Management',[['services','Services'],['tools','Online Tools'],['government','Government Information'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['events','Events'],['social','Social Posts']]],
+ ['Content Management',[['services','Services'],['tools','Online Tools'],['government','Government Information'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['events','Events'],]],
  ['Notices & Communication',[['notices','Notice Board'],['announcements','Announcements'],['suggestions','User Suggestions']]],
  ['Website Control',[['settings','Homepage & Website Settings'],['heroSlider','Hero Slider Control'],['buzzUpdate','Buzz Update']]]
 ];

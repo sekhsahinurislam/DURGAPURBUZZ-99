@@ -533,31 +533,47 @@ async function fetchSocialThumbnail(){
    image='https://i.ytimg.com/vi/'+videoId+'/hqdefault.jpg';
    try{const meta=await fetchYouTubeMetadata(url);title=meta.title||'';image=meta.thumbnail||image;}catch(metaError){console.warn('YouTube metadata:',metaError)}
   }else if(platform==='instagram'){
-   const clean=url.split('?')[0].replace(/\/$/,'');
-   const shortcode=(clean.match(/\/(?:p|reel|reels|tv)\/([^/]+)/i)||[])[1];
-   if(!shortcode)throw new Error('Instagram Post / Reel-এর সঠিক URL দিন।');
-   // First try Instagram's public oEmbed endpoint. If direct browser access is blocked,
-   // retry through a lightweight public metadata proxy and parse og:image / og:title.
-   const endpoints=[
-    'https://www.instagram.com/api/v1/oembed/?url='+encodeURIComponent(clean+'/'),
-    'https://api.allorigins.win/raw?url='+encodeURIComponent('https://www.instagram.com/p/'+shortcode+'/')
+   const clean=url.split('#')[0].split('?')[0].replace(/\/+$/,'');
+   const parsed=new URL(clean);
+   const host=parsed.hostname.replace(/^www\./,'').toLowerCase();
+   if(!['instagram.com','m.instagram.com'].includes(host))throw new Error('Instagram-এর সম্পূর্ণ Post / Reel URL দিন।');
+   const match=parsed.pathname.match(/^\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+   if(!match)throw new Error('Instagram URL-টি /p/ বা /reel/ দিয়ে শুরু হওয়া Public Post/Reel লিংক হতে হবে।');
+   const permalink='https://www.instagram.com/'+match[1].toLowerCase()+'/'+match[2]+'/';
+   const shortcode=match[2];
+   const parseInstagramPayload=(body,contentType='')=>{
+    let html=body||'';
+    if(contentType.includes('json')||/^\s*[\[{]/.test(html)){
+     try{const j=JSON.parse(html);const d=j.data||j;image=d.thumbnail_url||d.thumbnailUrl||d.display_url||d.image_url||image;title=d.title||d.author_name||d.caption||title;description=d.author_name||d.caption||description;html=typeof d.html==='string'?d.html:html}catch(_){ }
+    }
+    if(html){
+     const doc=new DOMParser().parseFromString(html,'text/html');
+     const get=(...selectors)=>{for(const sel of selectors){const v=doc.querySelector(sel)?.content||doc.querySelector(sel)?.textContent;if(v&&v.trim())return v.trim()}return ''};
+     image=get('meta[property="og:image"]','meta[property="og:image:secure_url"]','meta[name="twitter:image"]')||image;
+     title=get('meta[property="og:title"]','meta[name="twitter:title"]','title')||title;
+     description=get('meta[property="og:description"]','meta[name="description"]')||description;
+     if(!image){const m=html.match(/(?:display_url|thumbnail_src|thumbnail_url)["']?\s*[:=]\s*["']([^"']+)["']/i);if(m)image=m[1].replace(/\\u0026/g,'&').replace(/\\\//g,'/')}
+    }
+    // Jina Reader sometimes returns Markdown instead of HTML; recover the first image URL.
+    if(!image){const m=String(body||'').match(/https?:\\?\/?\\?\/?[^\s)\]"']+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)\]]*)?/i);if(m)image=m[0].replace(/\\u0026/g,'&').replace(/\\\//g,'/')}
+   };
+   const targets=[
+    {url:'https://www.instagram.com/api/v1/oembed/?url='+encodeURIComponent(permalink),type:'json'},
+    {url:'https://api.allorigins.win/raw?url='+encodeURIComponent(permalink),type:'html'},
+    {url:'https://corsproxy.io/?url='+encodeURIComponent(permalink),type:'html'},
+    {url:'https://r.jina.ai/https://www.instagram.com/'+match[1].toLowerCase()+'/'+shortcode+'/',type:'text'}
    ];
-   for(const endpoint of endpoints){
+   for(const target of targets){
     try{
-     const response=await fetch(endpoint,{headers:{'Accept':'application/json,text/html'}});
+     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);
+     const response=await fetch(target.url,{headers:{'Accept':'application/json,text/html,text/plain,*/*'},signal:controller.signal});clearTimeout(timer);
      if(!response.ok)continue;
-     const body=await response.text();
-     try{const data=JSON.parse(body);image=data.thumbnail_url||data.thumbnailUrl||image;title=data.title||data.author_name||title;description=data.author_name||description;}catch(_){
-      const doc=new DOMParser().parseFromString(body,'text/html');
-      image=doc.querySelector('meta[property="og:image"]')?.content||doc.querySelector('meta[name="twitter:image"]')?.content||image;
-      title=doc.querySelector('meta[property="og:title"]')?.content||doc.querySelector('title')?.textContent||title;
-      description=doc.querySelector('meta[property="og:description"]')?.content||description;
-     }
+     const body=await response.text();parseInstagramPayload(body,response.headers.get('content-type')||target.type);
      if(image)break;
-    }catch(err){console.warn('Instagram metadata endpoint unavailable:',err)}
+    }catch(err){console.warn('Instagram metadata source failed:',target.url,err)}
    }
-   if(!image)throw new Error('Instagram-এর Thumbnail পাওয়া যায়নি। পোস্টটি Public কিনা দেখুন; প্রয়োজনে Image URL হাতে দিন।');
-   if(!title)title='Instagram '+(/\/(?:reel|reels)\//i.test(clean)?'Reel':'Post');
+   if(!image)throw new Error('Instagram নিজস্বভাবে বাইরের Thumbnail Fetch সীমিত করছে। Public পোস্ট হলেও সবসময় অটো-ফেচ সম্ভব নয়। পোস্টের Share → Copy link ব্যবহার করুন; না হলে Image URL ঘরে ছবির সরাসরি লিংক দিন।');
+   if(!title)title='Instagram '+(/\/(?:reel|reels)\//i.test(permalink)?'Reel':'Post')+' · '+shortcode;
   }else{
    const manual=$('spImage').value.trim();
    if(!manual)throw new Error('Facebook-এর Thumbnail স্বয়ংক্রিয়ভাবে সবসময় পাওয়া যায় না। Image URL ঘরে ছবির সরাসরি লিংক দিন।');
@@ -578,7 +594,7 @@ async function fetchSocialThumbnail(){
  }catch(e){console.warn('Social thumbnail fetch:',e);status.textContent='Fetch হয়নি: '+e.message}
  finally{btn.disabled=false;btn.textContent='লিংক থেকে Thumbnail Fetch করুন'}
 }
-function socialAdminPanel(platform='youtube'){let box=$('adminContent');box.innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>${socialPlatformName(platform)} Content Management</h3></div><p>${socialPlatformName(platform)} ভিডিও / পোস্টের URL দিন। লিংক থেকে Thumbnail Fetch করে Preview দেখে Save করুন। Facebook ও Instagram-এর ক্ষেত্রে platform privacy/API সীমাবদ্ধতার কারণে thumbnail না এলে Image URL হাতে দিতে হবে।</p><input type="hidden" id="socialEditId"><input type="hidden" id="spPlatform" value="${platform}"><div class="formgrid"><div class="field"><label>Platform</label><input value="${socialPlatformName(platform)}" disabled></div><div class="field"><label>Status</label><select id="spStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><div class="field span2"><label>Post URL</label><input id="spUrl" type="url" placeholder="https://..." required><button class="btn ghost" type="button" id="fetchSocialThumbBtn" onclick="fetchSocialThumbnail()">লিংক থেকে Thumbnail Fetch করুন</button><small>URL দিন → Fetch চাপুন → Preview দেখে তারপর Save করুন।</small></div><div class="field span2"><div id="socialFetchPreview" style="display:none;border:1px solid var(--line);border-radius:12px;padding:10px"><img id="socialFetchPreviewImg" alt="Thumbnail preview" style="display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#eef2f0"><strong id="socialFetchPreviewTitle"></strong><p id="socialFetchPreviewDesc"></p></div></div><div class="field span2"><label>Post Title</label><input id="spTitle" placeholder="পোস্টের শিরোনাম"></div><div class="field span2"><label>Post Text / Caption</label><textarea id="spDescription" placeholder="পোস্টের লেখা বা সংক্ষিপ্ত বিবরণ"></textarea></div><div class="field span2"><label>Image URL (Facebook / Instagram-এর জন্য দিন; YouTube thumbnail auto)</label><input id="spImage" type="url" placeholder="https://... "></div></div><button class="btn primary" id="saveSocialBtn" type="button" onclick="saveSocialPost()">Save Social Post</button> <button class="btn ghost" type="button" onclick="clearSocialForm()">Clear</button><p id="socialSaveStatus" role="status"></p></div><div class="admin-card"><h3>Existing Social Posts</h3><div id="socialAdminList">Loading...</div></div>`;loadSocialAdminList()}
+function socialAdminPanel(platform='youtube'){let box=$('adminContent');box.innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>${socialPlatformName(platform)} Content Management</h3></div><p>${socialPlatformName(platform)} ভিডিও / পোস্টের URL দিন। লিংক থেকে Thumbnail Fetch করে Preview দেখে Save করুন। Instagram-এর Public Post/Reel হলে একাধিক metadata source দিয়ে Thumbnail/Title আনার চেষ্টা হবে; Instagram বাধা দিলে Image URL হাতে দিতে হবে। Facebook-এর ক্ষেত্রেও প্রয়োজনে Image URL দিন।</p><input type="hidden" id="socialEditId"><input type="hidden" id="spPlatform" value="${platform}"><div class="formgrid"><div class="field"><label>Platform</label><input value="${socialPlatformName(platform)}" disabled></div><div class="field"><label>Status</label><select id="spStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><div class="field span2"><label>Post URL</label><input id="spUrl" type="url" placeholder="https://..." required><button class="btn ghost" type="button" id="fetchSocialThumbBtn" onclick="fetchSocialThumbnail()">লিংক থেকে Thumbnail Fetch করুন</button><small>URL দিন → Fetch চাপুন → Preview দেখে তারপর Save করুন।</small></div><div class="field span2"><div id="socialFetchPreview" style="display:none;border:1px solid var(--line);border-radius:12px;padding:10px"><img id="socialFetchPreviewImg" alt="Thumbnail preview" style="display:block;width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#eef2f0"><strong id="socialFetchPreviewTitle"></strong><p id="socialFetchPreviewDesc"></p></div></div><div class="field span2"><label>Post Title</label><input id="spTitle" placeholder="পোস্টের শিরোনাম"></div><div class="field span2"><label>Post Text / Caption</label><textarea id="spDescription" placeholder="পোস্টের লেখা বা সংক্ষিপ্ত বিবরণ"></textarea></div><div class="field span2"><label>Image URL (Facebook / Instagram-এর জন্য দিন; YouTube thumbnail auto)</label><input id="spImage" type="url" placeholder="https://... "></div></div><button class="btn primary" id="saveSocialBtn" type="button" onclick="saveSocialPost()">Save Social Post</button> <button class="btn ghost" type="button" onclick="clearSocialForm()">Clear</button><p id="socialSaveStatus" role="status"></p></div><div class="admin-card"><h3>Existing Social Posts</h3><div id="socialAdminList">Loading...</div></div>`;loadSocialAdminList()}
 async function loadSocialAdminList(){try{let snap=await db.collection('socialPosts').orderBy('createdAt','desc').get();$('socialAdminList').innerHTML=snap.empty?'<p>কোনো পোস্ট নেই।</p>':snap.docs.map(d=>{let x=d.data();return `<div class="rowitem"><div class="grow"><strong>${esc(x.title||socialPlatformName(x.platform))}</strong><small>${socialPlatformName(x.platform)} · ${esc(x.status||'draft')}</small></div><button class="btn ghost" onclick="editSocialPost('${d.id}')">Edit</button><button class="btn" onclick="deleteSocialPost('${d.id}')">Delete</button></div>`}).join('')}catch(e){$('socialAdminList').textContent='Load failed: '+e.message}}
 async function saveSocialPost(){let status=$('socialSaveStatus'),btn=$('saveSocialBtn');if(!user||user.uid!==ADMIN_UID){status.textContent='Admin login প্রয়োজন';return}let url=urlOk($('spUrl').value.trim());if(!url){status.textContent='সঠিক Post URL দিন';return}let platform=$('spPlatform').value;let data={platform,url,title:$('spTitle').value.trim(),description:$('spDescription').value.trim(),imageUrl:urlOk($('spImage').value.trim()),status:$('spStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};try{btn.disabled=true;btn.textContent='Saving...';let id=$('socialEditId').value;if(id)await db.collection('socialPosts').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('socialPosts').add(data)}status.textContent='Post Save হয়েছে';clearSocialForm(platform);await loadSocialAdminList();await loadSocialPosts();toast('Social Post Saved')}catch(e){status.textContent='Save হয়নি: '+e.message;toast(e.message)}finally{btn.disabled=false;btn.textContent='Save Social Post'}}
 async function editSocialPost(id){let d=await db.collection('socialPosts').doc(id).get();if(!d.exists)return;let x=d.data();$('socialEditId').value=id;$('spPlatform').value=x.platform||'facebook';let pLabel=document.querySelector('#spPlatform')?.parentElement?.querySelector('input[disabled]');if(pLabel)pLabel.value=socialPlatformName(x.platform||'facebook');$('spUrl').value=x.url||'';$('spTitle').value=x.title||'';$('spDescription').value=x.description||'';$('spImage').value=x.imageUrl||'';$('spStatus').value=x.status||'draft';if(x.imageUrl){$('socialFetchPreviewImg').src=x.imageUrl;$('socialFetchPreviewTitle').textContent=x.title||'';$('socialFetchPreviewDesc').textContent=x.description||'';$('socialFetchPreview').style.display='block'}window.scrollTo(0,0)}

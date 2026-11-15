@@ -531,6 +531,20 @@ button.admin-back:hover,button.admin-back:focus-visible{
   .featured-home .sectionhead h2{font-size:22px!important}
 }
 
+/* Horizontal side-scroll rows: Notice Board, Tools, Events and social feeds */
+#notices .noticebox{overflow:hidden}
+#noticeList{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#9bcbb8 transparent}
+#noticeList .noticeitem{flex:0 0 clamp(245px,32vw,330px);min-width:0;padding:14px;border:1px solid #e1ece6;border-radius:13px;background:#f7fbf8;scroll-snap-align:start;line-height:1.5}
+#noticeList .noticeitem:last-child{border:1px solid #e1ece6}
+#toolsGrid,#eventsGrid{display:flex!important;flex-wrap:nowrap!important;gap:14px;overflow-x:auto;overflow-y:hidden;padding:3px 2px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#78b9a0 transparent}
+#toolsGrid>.card,#eventsGrid>.event-card{flex:0 0 clamp(250px,31vw,330px);width:clamp(250px,31vw,330px);min-width:0;scroll-snap-align:start}
+#toolsGrid>.empty,#eventsGrid>.empty{flex:0 0 100%;width:100%}
+#youtubeVideoGrid,#facebookVideoGrid,#instagramVideoGrid,#youtubePostsGrid,#facebookPostsGrid,#instagramPostsGrid{display:flex!important;flex-wrap:nowrap!important;gap:12px;overflow-x:auto;overflow-y:hidden;padding:3px 2px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#78b9a0 transparent}
+#youtubeVideoGrid>.youtube-setting-video,#facebookVideoGrid>*,#instagramVideoGrid>*{flex:0 0 clamp(260px,38vw,390px);width:clamp(260px,38vw,390px);min-width:0;scroll-snap-align:start}
+#youtubePostsGrid>.social-post-card,#facebookPostsGrid>.social-post-card,#instagramPostsGrid>.social-post-card{flex:0 0 clamp(190px,24vw,250px);width:clamp(190px,24vw,250px);min-width:0;scroll-snap-align:start}
+#youtubeVideoGrid>.empty,#facebookVideoGrid>.empty,#instagramVideoGrid>.empty,#youtubePostsGrid>.empty,#facebookPostsGrid>.empty,#instagramPostsGrid>.empty{flex:0 0 100%}
+@media(max-width:600px){#notices .noticebox{padding:14px}#noticeList .noticeitem{flex-basis:78vw;max-width:310px}#toolsGrid>.card,#eventsGrid>.event-card{flex-basis:78vw;width:78vw;max-width:320px}#youtubeVideoGrid>.youtube-setting-video,#facebookVideoGrid>*,#instagramVideoGrid>*{flex-basis:82vw;width:82vw;max-width:360px}#youtubePostsGrid>.social-post-card,#facebookPostsGrid>.social-post-card,#instagramPostsGrid>.social-post-card{flex-basis:58vw;width:58vw;max-width:245px}}
+
 </style>
 <style id="event-four-tabs-style">.event-tabs-four{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px!important;width:100%;align-items:stretch}.event-tabs-four .event-tab{min-width:0!important;width:100%;padding:9px 4px!important;font-size:clamp(9px,2.5vw,13px)!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-suggest-toggle{border:1px solid var(--cyan,#22d3ee)!important}.event-suggest-toggle.active{background:var(--cyan,#22d3ee)!important;color:#07111f!important}.event-suggest-box{max-width:100%;}.event-suggest-box .field{margin:6px 0}.event-suggest-box .field input,.event-suggest-box .field select,.event-suggest-box .field textarea{width:100%;box-sizing:border-box}@media(max-width:360px){.event-tabs-four{gap:3px!important}.event-tabs-four .event-tab{padding:8px 2px!important;font-size:9px!important}}</style>
 <style id="hero-left-corner-compact">

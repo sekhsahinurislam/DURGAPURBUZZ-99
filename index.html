@@ -514,6 +514,23 @@ button.admin-back:hover,button.admin-back:focus-visible{
   .featured-home .featured-article-copy p{font-size:12px!important}
 }
 
+
+/* Final Featured header refinement */
+.featured-home{
+  border:1px solid #edf0ee!important;
+  box-shadow:0 5px 16px rgba(20,48,38,.08)!important;
+}
+.featured-home .sectionhead h2{
+  font-size:25px!important;
+  line-height:1.2!important;
+  font-weight:750!important;
+}
+.featured-home .sectionhead{justify-content:flex-start!important}
+@media(max-width:600px){
+  .featured-home{border-width:1px!important}
+  .featured-home .sectionhead h2{font-size:22px!important}
+}
+
 </style>
 <style id="event-four-tabs-style">.event-tabs-four{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px!important;width:100%;align-items:stretch}.event-tabs-four .event-tab{min-width:0!important;width:100%;padding:9px 4px!important;font-size:clamp(9px,2.5vw,13px)!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-suggest-toggle{border:1px solid var(--cyan,#22d3ee)!important}.event-suggest-toggle.active{background:var(--cyan,#22d3ee)!important;color:#07111f!important}.event-suggest-box{max-width:100%;}.event-suggest-box .field{margin:6px 0}.event-suggest-box .field input,.event-suggest-box .field select,.event-suggest-box .field textarea{width:100%;box-sizing:border-box}@media(max-width:360px){.event-tabs-four{gap:3px!important}.event-tabs-four .event-tab{padding:8px 2px!important;font-size:9px!important}}</style>
 <style id="hero-left-corner-compact">
@@ -543,7 +560,7 @@ button.admin-back:hover,button.admin-back:focus-visible{
 <nav class="nav"><div class="wrap navrow" id="mainNav"><div class="menu-wrap left-menu-wrap"><button class="menu-trigger hamburger-trigger" id="hamburgerTrigger" type="button" aria-label="Open site navigation" aria-expanded="false" aria-controls="hamburgerMenu" onclick="toggleHamburgerMenu(event)"><span></span><span></span><span></span></button><div class="site-menu left-site-menu" id="hamburgerMenu" aria-label="Site navigation"></div></div><a class="brand navbrand" href="#home"><div class="logo" id="logoBox">DB</div><div><h1 id="siteName">DURGAPUR BUZZ</h1><small id="tagline" class="hidden">YOUR LOCAL DIGITAL ASSISTANT</small></div></a><div class="menu-wrap right-menu-wrap"><button class="dots-trigger" id="menuTrigger" type="button" aria-label="Open more options" aria-expanded="false" aria-controls="siteMenu" onclick="toggleSiteMenu(event)"><span>⋮</span></button><div class="site-menu" id="siteMenu" aria-label="More options"></div></div></div></nav>
 <main id="home">
 <section class="wrap hero"><div class="hero-main" id="heroMain"><div class="hero-slider-controls" id="heroSliderControls" aria-label="Hero slides"></div></div><div class="hero-side quick-links-grid service-shortcuts" id="quickCardsOne" aria-label="প্রধান পরিষেবা"></div></section>
-<section class="wrap section featured-home" id="featuredHome"><div class="sectionhead"><div><h2>Featured</h2><div class="neon-line"></div></div><a class="btn ghost" href="#directory">সব দেখুন ↗</a></div><div class="featured-strip" id="featuredHomeGrid"><div class="empty">Featured item লোড হচ্ছে...</div></div></section>
+<section class="wrap section featured-home" id="featuredHome"><div class="sectionhead"><div><h2>Featured</h2><div class="neon-line"></div></div></div><div class="featured-strip" id="featuredHomeGrid"><div class="empty">Featured item লোড হচ্ছে...</div></div></section>
 <section class="wrap section more-services-home" id="moreServicesHome">
   <div class="sectionhead"><div><h2>আরও দরকারি বিভাগ</h2><div class="neon-line"></div></div></div>
   <div class="more-service-grid" id="quickCardsTwo"></div>

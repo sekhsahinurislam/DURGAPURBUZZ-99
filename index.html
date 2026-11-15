@@ -428,6 +428,28 @@ html,body{max-width:100%;overflow-x:hidden}
 .admin-card .rowitem .btn{min-height:38px;white-space:nowrap}
 .admin-subitem{cursor:pointer;touch-action:manipulation}
 @media(max-width:600px){.admin-card .formgrid{grid-template-columns:minmax(0,1fr)}.admin-card .field.span2{grid-column:1/-1}.admin-page-toolbar{flex-wrap:wrap}.admin-page-toolbar h3{width:100%}}
+
+/* Admin back-button contrast: readable on every admin screen */
+button.admin-back,
+.admin-page-toolbar button.admin-back,
+.admin-card .admin-page-toolbar .admin-back,
+#adminContent .admin-back{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  gap:7px!important;min-height:44px!important;padding:10px 16px!important;
+  color:#124b3c!important;background:#ffffff!important;
+  border:2px solid #176b55!important;border-radius:12px!important;
+  font-size:15px!important;font-weight:800!important;line-height:1.3!important;
+  opacity:1!important;text-shadow:none!important;-webkit-text-fill-color:#124b3c!important;
+  box-shadow:0 2px 8px rgba(12,58,45,.12)!important;
+}
+button.admin-back:hover,button.admin-back:focus-visible{
+  color:#ffffff!important;background:#145b49!important;border-color:#145b49!important;
+  -webkit-text-fill-color:#ffffff!important;outline:2px solid #9ad8c4!important;outline-offset:2px!important;
+}
+.admin-page-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.admin-page-toolbar h3{color:#174b3e!important}
+#adminContent .admin-card .field label{color:#234b40!important;font-weight:700!important}
+#adminContent .admin-card input,#adminContent .admin-card select,#adminContent .admin-card textarea{color:#1c302a!important;background:#fff!important}
 </style>
 <style id="event-four-tabs-style">.event-tabs-four{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px!important;width:100%;align-items:stretch}.event-tabs-four .event-tab{min-width:0!important;width:100%;padding:9px 4px!important;font-size:clamp(9px,2.5vw,13px)!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-suggest-toggle{border:1px solid var(--cyan,#22d3ee)!important}.event-suggest-toggle.active{background:var(--cyan,#22d3ee)!important;color:#07111f!important}.event-suggest-box{max-width:100%;}.event-suggest-box .field{margin:6px 0}.event-suggest-box .field input,.event-suggest-box .field select,.event-suggest-box .field textarea{width:100%;box-sizing:border-box}@media(max-width:360px){.event-tabs-four{gap:3px!important}.event-tabs-four .event-tab{padding:8px 2px!important;font-size:9px!important}}</style>
 <style id="hero-left-corner-compact">
@@ -746,108 +768,50 @@ function menuManagerForm(){const items=Array.isArray(settings.menuLinks)?setting
 async function saveMenuLinks(){const status=$('menuLinksStatus'),btn=$('saveMenuLinksBtn');if(!user||user.uid!==ADMIN_UID){if(status)status.textContent='Admin login প্রয়োজন';return}const rows=($('menuLinksInput').value||'').split('\n').map(line=>{const [label,url,icon='']=line.split('|').map(x=>x.trim());return {label,url,icon}}).filter(x=>x.label&&x.url);try{btn.disabled=true;await db.collection('site').doc('settings').set({menuLinks:rows,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});settings={...settings,menuLinks:rows};renderSiteMenu();if(status)status.textContent='Menu সফলভাবে Save হয়েছে';toast('Menu saved')}catch(e){if(status)status.textContent='Save failed: '+e.message;toast('Menu save failed')}finally{btn.disabled=false}}
 
 
-// Directory Admin: full CRUD. Root category parent IDs match main card keys.
-function directoryRootOptions(){return [...managedCards(1),...managedCards(2)].map(x=>({id:'main:'+slugKey(x.search||x.title),title:x.title}));}
-async function directoryAdminLoadAll(){
- const [cs,ds]=await Promise.all([db.collection('directoryCategories').get(),db.collection('directoryItems').get()]);
- directoryTreeCache=cs.docs.map(d=>({id:d.id,...d.data()}));
- directoryListingCache=ds.docs.map(d=>({id:d.id,...d.data()}));
+function directoryCategoriesAdminForm(){
+ $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" onclick="backToAdminMenu()">← সব মেনু</button><h3>Sub-Category Management</h3></div><p>যেকোনো Main Card অথবা আগের Sub-Category-কে Parent করে নতুন Category যোগ করুন। এভাবে অসীম স্তর তৈরি করা যাবে।</p>
+ <div class="formgrid"><div class="field span2"><label>Parent নির্বাচন করুন</label><select id="dcParent"><option value="">লোড হচ্ছে...</option></select></div><div class="field"><label>Category Name *</label><input id="dcTitle" placeholder="যেমন: দাঁতের ডাক্তার"></div><div class="field"><label>Icon / Emoji</label><input id="dcIcon" placeholder="🦷"></div><div class="field span2"><label>Logo Image URL (ঐচ্ছিক)</label><input id="dcLogo" placeholder="https://..."></div><div class="field span2"><label>Description</label><textarea id="dcDesc"></textarea></div><div class="field"><label>Status</label><select id="dcStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><input type="hidden" id="dcEditId"></div><button class="btn primary" onclick="saveDirectoryCategory()">Save Category</button><button class="btn ghost" onclick="clearDirectoryCategoryForm()">Clear</button><p id="dcStatusMsg"></p></div><div class="admin-card"><h3>Existing Categories</h3><div id="dcList">লোড হচ্ছে...</div></div>`;
+ loadDirectoryCategoryAdmin();
 }
-function directoryParentOptions(selected){
- const roots=directoryRootOptions().map(x=>`<option value="${esc(x.id)}" ${selected===x.id?'selected':''}>মূল বিভাগ: ${esc(x.title)}</option>`);
- const cats=directoryTreeCache.map(x=>`<option value="${esc(x.id)}" ${selected===x.id?'selected':''}>উপ-বিভাগ: ${esc(x.title)}</option>`);
- return roots.concat(cats).join('');
+async function loadDirectoryCategoryAdmin(){
+ const [cs,one,two]=await Promise.all([db.collection('directoryCategories').get(),Promise.resolve(managedCards(1)),Promise.resolve(managedCards(2))]);
+ const opts=[...one,...two].map(x=>({id:'main:'+mainCardKey(x.search||x.title),title:'Main: '+x.title}));
+ const cats=cs.docs.map(d=>({id:d.id,...d.data()}));directoryTreeCache=cats;
+ $('dcParent').innerHTML=opts.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join('')+cats.map(x=>`<option value="${esc(x.id)}">↳ ${esc(x.title)}</option>`).join('');
+ $('dcList').innerHTML=cats.length?cats.map(x=>`<div class="rowitem"><div class="grow"><strong>${esc(x.title)}</strong><small>Parent: ${esc(x.parentTitle||x.parentId||'')}</small></div><button class="btn ghost" onclick="editDirectoryCategory('${x.id}')">Edit</button><button class="btn" onclick="deleteDirectoryCategory('${x.id}')">Delete</button></div>`).join(''):'কোনো Category নেই।';
 }
-async function directoryCategoriesAdminForm(){
- $('adminContent').innerHTML='<div class="admin-card">Sub-Category Management লোড হচ্ছে...</div>';
- try{await directoryAdminLoadAll();renderDirectoryCategoriesAdmin()}catch(e){$('adminContent').innerHTML='<div class="admin-card">লোড হয়নি: '+esc(e.message)+'</div>'}
-}
-function renderDirectoryCategoriesAdmin(editId){
- const edit=directoryTreeCache.find(x=>x.id===editId)||{};
- $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" onclick="backToAdminMenu()">← সব মেনু</button><h3>Sub-Category Management</h3></div>
- <p>মূল ৮টি কার্ড বা অন্য Sub-Category-এর অধীনে নতুন বিভাগ যোগ করুন। Unlimited Level সমর্থিত।</p>
- <div class="formgrid">
- <div class="field"><label>বিভাগের নাম *</label><input id="dcTitle" value="${esc(edit.title||'')}" placeholder="যেমন: দাঁতের ডাক্তার"></div>
- <div class="field"><label>Icon / Emoji</label><input id="dcIcon" value="${esc(edit.icon||'📁')}" placeholder="🦷"></div>
- <div class="field span2"><label>Logo Image URL</label><input id="dcLogo" value="${esc(edit.logoUrl||'')}" placeholder="https://..."></div>
- <div class="field span2"><label>Parent Category *</label><select id="dcParent"><option value="">বিভাগ নির্বাচন করুন</option>${directoryParentOptions(edit.parentId)}</select></div>
- <div class="field span2"><label>বিবরণ</label><textarea id="dcDescription">${esc(edit.description||'')}</textarea></div>
- <div class="field"><label>Status</label><select id="dcStatus"><option value="published" ${edit.status!=='hidden'&&edit.status!=='draft'?'selected':''}>Published</option><option value="draft" ${edit.status==='draft'?'selected':''}>Draft</option><option value="hidden" ${edit.status==='hidden'?'selected':''}>Hidden</option></select></div>
- </div><input type="hidden" id="dcEditId" value="${esc(edit.id||'')}">
- <button class="btn primary" onclick="saveDirectoryCategory()">Save Category</button> <button class="btn ghost" onclick="clearDirectoryCategoryForm()">Clear</button><p id="dcStatusMsg"></p></div>
- <div class="admin-card"><h3>Existing Sub-Categories</h3><div id="directoryCategoriesList">${directoryTreeCache.length?directoryTreeCache.map(x=>`<div class="rowitem"><div class="grow"><strong>${esc(x.title)}</strong><small>${esc(directoryTreeCache.find(p=>p.id===x.parentId)?.title||directoryRootOptions().find(p=>p.id===x.parentId)?.title||'Parent')} · ${esc(x.status||'published')}</small></div><button class="btn ghost" onclick="renderDirectoryCategoriesAdmin('${x.id}')">Edit</button><button class="btn danger" onclick="deleteDirectoryCategory('${x.id}')">Delete</button></div>`).join(''):'<p>কোনো Sub-Category নেই।</p>'}</div></div>`;
-}
-function clearDirectoryCategoryForm(){['dcTitle','dcLogo','dcDescription','dcEditId'].forEach(id=>$(id).value='');$('dcIcon').value='📁';$('dcParent').value='';$('dcStatus').value='published'}
 async function saveDirectoryCategory(){
- const title=$('dcTitle').value.trim(),parentId=$('dcParent').value;
- if(!title||!parentId){$('dcStatusMsg').textContent='বিভাগের নাম ও Parent Category দিতে হবে';return}
- if(!user||user.uid!==ADMIN_UID){toast('Admin login প্রয়োজন');return}
- const data={title,parentId,icon:$('dcIcon').value.trim()||'📁',logoUrl:urlOk($('dcLogo').value.trim()),description:$('dcDescription').value.trim(),status:$('dcStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
- try{const id=$('dcEditId').value;if(id)await db.collection('directoryCategories').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryCategories').add(data)}await directoryCategoriesAdminForm();toast('Sub-Category Save হয়েছে')}catch(e){$('dcStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
+ const title=$('dcTitle').value.trim();if(!title){toast('Category Name প্রয়োজন');return}
+ const parentId=$('dcParent').value;const parentTitle=$('dcParent').selectedOptions[0]?.textContent||'';
+ const data={title,icon:$('dcIcon').value.trim(),logoUrl:urlOk($('dcLogo').value.trim()),description:$('dcDesc').value.trim(),parentId,parentTitle,status:$('dcStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ try{const id=$('dcEditId').value;if(id)await db.collection('directoryCategories').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryCategories').add(data)}
+ clearDirectoryCategoryForm();await loadDirectoryCategoryAdmin();toast('Category saved')}catch(e){$('dcStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
 }
-async function deleteDirectoryCategory(id){if(!confirm('এই Sub-Category মুছবেন? এর অধীনে থাকা child/listing আগে সরাতে হবে।'))return;try{const child=directoryTreeCache.some(x=>x.parentId===id)||directoryListingCache.some(x=>x.parentId===id);if(child){toast('আগে এর অধীনের Sub-Category ও Listing সরান');return}await db.collection('directoryCategories').doc(id).delete();await directoryCategoriesAdminForm();toast('Category Deleted')}catch(e){toast(e.message)}}
-async function directoryItemsAdminForm(){
- $('adminContent').innerHTML='<div class="admin-card">Directory Listing Management লোড হচ্ছে...</div>';
- try{await directoryAdminLoadAll();renderDirectoryItemsAdmin()}catch(e){$('adminContent').innerHTML='<div class="admin-card">লোড হয়নি: '+esc(e.message)+'</div>'}
+function editDirectoryCategory(id){const x=directoryTreeCache.find(v=>v.id===id);if(!x)return;$('dcEditId').value=id;$('dcTitle').value=x.title||'';$('dcIcon').value=x.icon||'';$('dcLogo').value=x.logoUrl||'';$('dcDesc').value=x.description||'';$('dcParent').value=x.parentId||'';$('dcStatus').value=x.status||'draft';window.scrollTo(0,0)}
+function clearDirectoryCategoryForm(){['dcEditId','dcTitle','dcIcon','dcLogo','dcDesc'].forEach(id=>$(id).value='');$('dcStatus').value='published'}
+async function deleteDirectoryCategory(id){if(!confirm('এই Category মুছবেন? এর Sub-Category/Listing আলাদাভাবে মুছতে হবে।'))return;try{await db.collection('directoryCategories').doc(id).delete();await loadDirectoryCategoryAdmin();toast('Category deleted')}catch(e){toast(e.message)}}
+function directoryItemsAdminForm(){
+ $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" onclick="backToAdminMenu()">← সব মেনু</button><h3>Directory Listing Management</h3></div><p>যে Sub-Category-তে তথ্য দেখাতে চান সেটি নির্বাচন করুন। ডাক্তার/ব্যবসা/সেবা—সব ধরনের Listing যোগ করা যাবে।</p>
+ <div class="formgrid"><div class="field span2"><label>Parent Category *</label><select id="diParent"><option value="">লোড হচ্ছে...</option></select></div><div class="field"><label>Name *</label><input id="diTitle"></div><div class="field"><label>Photo URL</label><input id="diImage" placeholder="https://..."></div><div class="field"><label>Degree / Qualification</label><input id="diDegree"></div><div class="field"><label>Specialty</label><input id="diSpecialty"></div><div class="field"><label>Hospital / Organization / Chamber</label><input id="diOrg"></div><div class="field"><label>Phone / WhatsApp</label><input id="diPhone"></div><div class="field span2"><label>Address</label><input id="diAddress"></div><div class="field span2"><label>Description / Experience</label><textarea id="diDesc"></textarea></div><div class="field"><label>Google Maps URL</label><input id="diMap"></div><div class="field"><label>Website URL</label><input id="diWeb"></div><div class="field"><label>Status</label><select id="diStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><input type="hidden" id="diEditId"></div><button class="btn primary" onclick="saveDirectoryListing()">Save Listing</button><button class="btn ghost" onclick="clearDirectoryListingForm()">Clear</button><p id="diStatusMsg"></p></div><div class="admin-card"><h3>Existing Directory Listings</h3><div id="diList">লোড হচ্ছে...</div></div>`;
+ loadDirectoryListingAdmin();
 }
-function renderDirectoryItemsAdmin(editId){
- const x=directoryListingCache.find(v=>v.id===editId)||{};
- $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" onclick="backToAdminMenu()">← সব মেনু</button><h3>Directory Listing Management</h3></div>
- <p>ব্যবহারকারীর WhatsApp-এ পাঠানো তথ্য যাচাই করে এখানে নিজে Add করুন।</p>
- <div class="formgrid">
- <div class="field span2"><label>ব্যক্তি / প্রতিষ্ঠান / পরিষেবার নাম *</label><input id="diTitle" value="${esc(x.title||'')}"></div>
- <div class="field"><label>ছবি URL</label><input id="diImage" value="${esc(x.imageUrl||'')}"></div>
- <div class="field"><label>Icon</label><input id="diIcon" value="${esc(x.icon||'👤')}"></div>
- <div class="field"><label>যোগ্যতা</label><input id="diDegree" value="${esc(x.degree||'')}"></div>
- <div class="field"><label>বিশেষত্ব</label><input id="diSpecialty" value="${esc(x.specialty||'')}"></div>
- <div class="field"><label>অভিজ্ঞতা</label><input id="diExperience" value="${esc(x.experience||'')}"></div>
- <div class="field"><label>প্রতিষ্ঠান / চেম্বার</label><input id="diOrg" value="${esc(x.organization||'')}"></div>
- <div class="field"><label>ফোন</label><input id="diPhone" value="${esc(x.phone||'')}"></div>
- <div class="field span2"><label>ঠিকানা</label><input id="diAddress" value="${esc(x.address||'')}"></div>
- <div class="field"><label>Google Maps URL</label><input id="diMap" value="${esc(x.mapUrl||'')}"></div>
- <div class="field"><label>Website URL</label><input id="diWebsite" value="${esc(x.websiteUrl||'')}"></div>
- <div class="field span2"><label>বিবরণ</label><textarea id="diDescription">${esc(x.description||'')}</textarea></div>
- <div class="field span2"><label>কোন বিভাগের অধীনে থাকবে *</label><select id="diParent"><option value="">বিভাগ নির্বাচন করুন</option>${directoryParentOptions(x.parentId)}</select></div>
- <div class="field"><label>Status</label><select id="diStatus"><option value="published" ${x.status!=='draft'&&x.status!=='hidden'?'selected':''}>Published</option><option value="draft" ${x.status==='draft'?'selected':''}>Draft</option><option value="hidden" ${x.status==='hidden'?'selected':''}>Hidden</option></select></div>
- </div><input type="hidden" id="diEditId" value="${esc(x.id||'')}">
- <button class="btn primary" onclick="saveDirectoryListing()">Save Listing</button> <button class="btn ghost" onclick="clearDirectoryListingForm()">Clear</button><p id="diStatusMsg"></p></div>
- <div class="admin-card"><h3>Existing Directory Listings</h3><div id="directoryItemsList">${directoryListingCache.length?directoryListingCache.map(v=>`<div class="rowitem"><div class="grow"><strong>${esc(v.title)}</strong><small>${esc(directoryTreeCache.find(c=>c.id===v.parentId)?.title||directoryRootOptions().find(c=>c.id===v.parentId)?.title||'Parent')} · ${esc(v.status||'published')}</small></div><button class="btn ghost" onclick="renderDirectoryItemsAdmin('${v.id}')">Edit</button><button class="btn danger" onclick="deleteDirectoryListing('${v.id}')">Delete</button></div>`).join(''):'<p>কোনো Listing নেই।</p>'}</div></div>`;
+async function loadDirectoryListingAdmin(){
+ const [cs,ds]=await Promise.all([db.collection('directoryCategories').get(),db.collection('directoryItems').get()]);
+ directoryTreeCache=cs.docs.map(d=>({id:d.id,...d.data()}));directoryListingCache=ds.docs.map(d=>({id:d.id,...d.data()}));
+ $('diParent').innerHTML=directoryTreeCache.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join('');
+ $('diList').innerHTML=directoryListingCache.length?directoryListingCache.map(x=>`<div class="rowitem"><div class="grow"><strong>${esc(x.title)}</strong><small>${esc(x.parentTitle||'')} · ${esc(x.status||'draft')}</small></div><button class="btn ghost" onclick="editDirectoryListing('${x.id}')">Edit</button><button class="btn" onclick="deleteDirectoryListing('${x.id}')">Delete</button></div>`).join(''):'কোনো Listing নেই।';
 }
-function clearDirectoryListingForm(){['diTitle','diImage','diDegree','diSpecialty','diExperience','diOrg','diPhone','diAddress','diMap','diWebsite','diDescription','diEditId'].forEach(id=>$(id).value='');$('diIcon').value='👤';$('diParent').value='';$('diStatus').value='published'}
 async function saveDirectoryListing(){
- const title=$('diTitle').value.trim(),parentId=$('diParent').value;if(!title||!parentId){$('diStatusMsg').textContent='নাম ও বিভাগ নির্বাচন করুন';return}
- if(!user||user.uid!==ADMIN_UID){toast('Admin login প্রয়োজন');return}
- const data={title,imageUrl:urlOk($('diImage').value.trim()),icon:$('diIcon').value.trim()||'👤',degree:$('diDegree').value.trim(),specialty:$('diSpecialty').value.trim(),experience:$('diExperience').value.trim(),organization:$('diOrg').value.trim(),phone:$('diPhone').value.trim(),address:$('diAddress').value.trim(),mapUrl:urlOk($('diMap').value.trim()),websiteUrl:urlOk($('diWebsite').value.trim()),description:$('diDescription').value.trim(),parentId,status:$('diStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
- try{const id=$('diEditId').value;if(id)await db.collection('directoryItems').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryItems').add(data)}await directoryItemsAdminForm();toast('Directory Listing Save হয়েছে')}catch(e){$('diStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
+ const title=$('diTitle').value.trim(),parentId=$('diParent').value;if(!title||!parentId){toast('Name ও Parent Category প্রয়োজন');return}
+ const parent=directoryTreeCache.find(x=>x.id===parentId);
+ const data={title,parentId,parentTitle:parent?.title||'',imageUrl:urlOk($('diImage').value.trim()),degree:$('diDegree').value.trim(),specialty:$('diSpecialty').value.trim(),organization:$('diOrg').value.trim(),phone:$('diPhone').value.trim(),address:$('diAddress').value.trim(),description:$('diDesc').value.trim(),mapUrl:urlOk($('diMap').value.trim()),websiteUrl:urlOk($('diWeb').value.trim()),status:$('diStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ try{const id=$('diEditId').value;if(id)await db.collection('directoryItems').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryItems').add(data)}clearDirectoryListingForm();await loadDirectoryListingAdmin();toast('Directory listing saved')}catch(e){$('diStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
 }
-async function deleteDirectoryListing(id){if(!confirm('এই Listing মুছবেন?'))return;try{await db.collection('directoryItems').doc(id).delete();await directoryItemsAdminForm();toast('Listing Deleted')}catch(e){toast(e.message)}}
+function editDirectoryListing(id){const x=directoryListingCache.find(v=>v.id===id);if(!x)return;const vals={diEditId:id,diTitle:x.title,diImage:x.imageUrl,diDegree:x.degree,diSpecialty:x.specialty,diOrg:x.organization,diPhone:x.phone,diAddress:x.address,diDesc:x.description,diMap:x.mapUrl,diWeb:x.websiteUrl,diStatus:x.status};Object.entries(vals).forEach(([k,v])=>{if($(k))$(k).value=v||''});$('diParent').value=x.parentId||'';window.scrollTo(0,0)}
+function clearDirectoryListingForm(){['diEditId','diTitle','diImage','diDegree','diSpecialty','diOrg','diPhone','diAddress','diDesc','diMap','diWeb'].forEach(id=>$(id).value='');$('diStatus').value='published'}
+async function deleteDirectoryListing(id){if(!confirm('এই Listing মুছবেন?'))return;try{await db.collection('directoryItems').doc(id).delete();await loadDirectoryListingAdmin();toast('Listing deleted')}catch(e){toast(e.message)}}
 
-async function featuredAdminForm(){
- $('adminContent').innerHTML='<div class="admin-card">Featured Management লোড হচ্ছে...</div>';
- try{const snap=await db.collection('featuredItems').get();cache.featuredItems=snap.docs.map(d=>({id:d.id,...d.data()}));renderFeaturedAdmin()}catch(e){$('adminContent').innerHTML='<div class="admin-card">Featured লোড হয়নি: '+esc(e.message)+'</div>'}
-}
-function renderFeaturedAdmin(editId){
- const x=(cache.featuredItems||[]).find(v=>v.id===editId)||{};
- $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" onclick="backToAdminMenu()">← সব মেনু</button><h3>Featured Management</h3></div>
- <div class="formgrid"><div class="field span2"><label>Card Title *</label><input id="ftTitle" value="${esc(x.title||'')}"></div>
- <div class="field span2"><label>Image URL</label><input id="ftImage" value="${esc(x.imageUrl||'')}" placeholder="https://..."></div>
- <div class="field span2"><label>Description</label><textarea id="ftDescription">${esc(x.description||'')}</textarea></div>
- <div class="field"><label>Click URL</label><input id="ftUrl" value="${esc(x.url||'')}" placeholder="https://..."></div>
- <div class="field"><label>Icon</label><input id="ftIcon" value="${esc(x.icon||'⭐')}"></div>
- <div class="field"><label>Open Mode</label><select id="ftMode"><option value="external" ${x.openMode!=='internal'?'selected':''}>External</option><option value="internal" ${x.openMode==='internal'?'selected':''}>Internal</option></select></div>
- <div class="field"><label>Order</label><input id="ftOrder" type="number" min="0" value="${Number(x.order||0)}"></div>
- <div class="field"><label>Status</label><select id="ftStatus"><option value="published" ${x.status!=='draft'&&x.status!=='hidden'?'selected':''}>Published</option><option value="draft" ${x.status==='draft'?'selected':''}>Draft</option><option value="hidden" ${x.status==='hidden'?'selected':''}>Hidden</option></select></div></div>
- <input type="hidden" id="ftEditId" value="${esc(x.id||'')}"><button class="btn primary" onclick="saveFeaturedItem()">Save Featured</button> <button class="btn ghost" onclick="clearFeaturedForm()">Clear</button><p id="ftStatusMsg"></p></div>
- <div class="admin-card"><h3>Existing Featured Cards</h3>${(cache.featuredItems||[]).map(v=>`<div class="rowitem"><div class="grow"><strong>${esc(v.title)}</strong><small>${esc(v.status||'published')}</small></div><button class="btn ghost" onclick="renderFeaturedAdmin('${v.id}')">Edit</button><button class="btn danger" onclick="deleteFeaturedItem('${v.id}')">Delete</button></div>`).join('')||'<p>এখনও Featured Card নেই।</p>'}</div>`;
-}
-function clearFeaturedForm(){['ftTitle','ftImage','ftDescription','ftUrl','ftEditId'].forEach(id=>$(id).value='');$('ftIcon').value='⭐';$('ftMode').value='external';$('ftOrder').value='0';$('ftStatus').value='published'}
-async function saveFeaturedItem(){
- const title=$('ftTitle').value.trim();if(!title){$('ftStatusMsg').textContent='Title দিতে হবে';return}
- if(!user||user.uid!==ADMIN_UID){toast('Admin login প্রয়োজন');return}
- const data={title,imageUrl:urlOk($('ftImage').value.trim()),description:$('ftDescription').value.trim(),url:urlOk($('ftUrl').value.trim()),icon:$('ftIcon').value.trim()||'⭐',openMode:$('ftMode').value,order:Number($('ftOrder').value||0),status:$('ftStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
- try{const id=$('ftEditId').value;if(id)await db.collection('featuredItems').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('featuredItems').add(data)}await featuredAdminForm();await loadPublic();toast('Featured Saved')}catch(e){$('ftStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
-}
-async function deleteFeaturedItem(id){if(!confirm('Featured Card মুছবেন?'))return;try{await db.collection('featuredItems').doc(id).delete();await featuredAdminForm();await loadPublic();toast('Featured Deleted')}catch(e){toast(e.message)}}
+
 const adminGroups=[
  ['Dashboard',[['dashboard','Overview']]],
  ['Content Management',[['services','Services'],['tools','Online Tools'],['government','Government Information'],['forms','Forms & Downloads'],['businesses','Business Directory'],['blogs','Guides & Blogs'],['events','Events'],['socialYoutube','YouTube'],['socialFacebook','Facebook'],['socialInstagram','Instagram'],]],

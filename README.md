@@ -42,3 +42,5 @@ Admin panel update (2026-11-15):
 - Simplified Hero Slider Control to exactly three image URL fields and a 3/6/9-second interval selector.
 - Added `featuredItems` to Firestore rules for public published reads and admin-only writes.
 - Verified JavaScript syntax with Node.js and ZIP integrity.
+
+Directory Admin UI has been restored to the earlier simpler interface from the Unlimited Category Directory version, including its original category/listing forms and CRUD handlers. Admin back buttons now use high-contrast green-on-white styling with explicit text fill and minimum size.

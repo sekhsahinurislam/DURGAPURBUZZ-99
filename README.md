@@ -35,3 +35,10 @@ EVENTS SECTION UPDATE
 This build adds `directoryCategories` and `directoryItems` Firestore collections. Publish categories and listings from Admin Panel. Categories support unlimited nesting through `parentId`. Public website queries only published documents. The included `firestore.rules` allows public reads of published category/listing documents and Admin-only writes for these collections. Replace the Firestore rules in Firebase Console with the included rules before using the new directory tools.
 
 UI refinement: WhatsApp submission is a fixed bottom-right + button. The form does not ask for submitter name or phone; users can suggest another person's/provider's details. Global back/ghost button contrast has been increased.
+
+Admin panel update (2026-11-15):
+- Implemented missing Sub-Category Management and Directory Listing Management handlers (CRUD) that were referenced by the menu but not defined, which caused those menu options not to open.
+- Added standalone Featured Management under Website Control, backed by the `featuredItems` Firestore collection.
+- Simplified Hero Slider Control to exactly three image URL fields and a 3/6/9-second interval selector.
+- Added `featuredItems` to Firestore rules for public published reads and admin-only writes.
+- Verified JavaScript syntax with Node.js and ZIP integrity.

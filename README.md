@@ -28,3 +28,8 @@ EVENTS SECTION UPDATE
 - Admin menu: Content Management > Events. Admin can add/edit/publish/draft/hide/delete events.
 - Event fields: title, event type, artist name, date, time, location, description, image URL, event status.
 - Firestore rules include events: public reads only published records; admin UID controls writes. Publish included firestore.rules in Firebase Console.
+
+
+## Multi-level Directory Setup
+
+This build adds `directoryCategories` and `directoryItems` Firestore collections. Publish categories and listings from Admin Panel. Categories support unlimited nesting through `parentId`. Public website queries only published documents. The included `firestore.rules` allows public reads of published category/listing documents and Admin-only writes for these collections. Replace the Firestore rules in Firebase Console with the included rules before using the new directory tools.

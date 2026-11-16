@@ -923,18 +923,41 @@ function directoryCategoriesAdminForm(){
  loadDirectoryCategoryAdmin();
 }
 async function loadDirectoryCategoryAdmin(){
- const [cs,one,two]=await Promise.all([db.collection('directoryCategories').get(),Promise.resolve(managedCards(1)),Promise.resolve(managedCards(2))]);
- const opts=[...one,...two].map(x=>({id:'main:'+mainCardKey(x.search||x.title),title:'Main: '+x.title}));
- const cats=cs.docs.map(d=>({id:d.id,...d.data()}));directoryTreeCache=cats;
- $('dcParent').innerHTML=opts.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join('')+cats.map(x=>`<option value="${esc(x.id)}">↳ ${esc(x.title)}</option>`).join('');
- $('dcList').innerHTML=cats.length?cats.map(x=>`<div class="rowitem"><div class="grow"><strong>${esc(x.title)}</strong><small>Parent: ${esc(x.parentTitle||x.parentId||'')}</small></div><button class="btn ghost" onclick="editDirectoryCategory('${x.id}')">Edit</button><button class="btn" onclick="deleteDirectoryCategory('${x.id}')">Delete</button></div>`).join(''):'কোনো Category নেই।';
+ const list=$('dcList'),parent=$('dcParent');
+ try{
+  if(list)list.textContent='লোড হচ্ছে...';
+  const cs=await db.collection('directoryCategories').get();
+  const one=managedCards(1)||[],two=managedCards(2)||[];
+  const opts=[...one,...two].filter(x=>x&&x.title).map(x=>({id:'main:'+mainCardKey(x.search||x.title),title:'Main: '+x.title}));
+  const cats=cs.docs.map(d=>({id:d.id,...d.data()}));
+  directoryTreeCache=cats;
+  if(parent){
+   const current=parent.value;
+   parent.innerHTML='<option value="">— Parent নির্বাচন করুন —</option>'+opts.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join('')+cats.map(x=>`<option value="${esc(x.id)}">↳ ${esc(x.title||'Untitled')}</option>`).join('');
+   if(current)parent.value=current;
+  }
+  if(list)list.innerHTML=cats.length?cats.map(x=>`<div class="rowitem"><div class="grow"><strong>${esc(x.title||'')}</strong><small>Parent: ${esc(x.parentTitle||x.parentId||'')}</small></div><button type="button" class="btn ghost" onclick="editDirectoryCategory('${x.id}')">Edit</button><button type="button" class="btn" onclick="deleteDirectoryCategory('${x.id}')">Delete</button></div>`).join(''):'কোনো Category নেই।';
+ }catch(e){
+  if(list)list.innerHTML='<div class="empty">Sub-Category লোড হয়নি: '+esc(e.message)+'</div>';
+  toast('Sub-Category লোড হয়নি: '+e.message);
+ }
 }
 async function saveDirectoryCategory(){
- const title=$('dcTitle').value.trim();if(!title){toast('Category Name প্রয়োজন');return}
- const parentId=$('dcParent').value;const parentTitle=$('dcParent').selectedOptions[0]?.textContent||'';
- const data={title,icon:$('dcIcon').value.trim(),logoUrl:urlOk($('dcLogo').value.trim()),description:$('dcDesc').value.trim(),parentId,parentTitle,status:$('dcStatus').value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
- try{const id=$('dcEditId').value;if(id)await db.collection('directoryCategories').doc(id).set(data,{merge:true});else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryCategories').add(data)}
- clearDirectoryCategoryForm();await loadDirectoryCategoryAdmin();toast('Category saved')}catch(e){$('dcStatusMsg').textContent='Save হয়নি: '+e.message;toast(e.message)}
+ const title=$('dcTitle').value.trim();
+ const parentId=String($('dcParent').value||'').trim();
+ if(!title){toast('Category Name প্রয়োজন');$('dcTitle').focus();return}
+ if(!parentId){toast('আগে Parent Category নির্বাচন করুন');$('dcParent').focus();return}
+ const parentTitle=$('dcParent').selectedOptions[0]?.textContent||'';
+ const data={title,icon:$('dcIcon').value.trim(),logoUrl:urlOk($('dcLogo').value.trim()),description:$('dcDesc').value.trim(),parentId,parentTitle,status:$('dcStatus').value||'published',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ try{
+  const id=$('dcEditId').value;
+  if(id)await db.collection('directoryCategories').doc(id).set(data,{merge:true});
+  else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('directoryCategories').add(data)}
+  clearDirectoryCategoryForm();await loadDirectoryCategoryAdmin();toast('Sub-Category সফলভাবে Save হয়েছে');
+ }catch(e){
+  const msg='Save হয়নি: '+(e.code||'')+' '+e.message;
+  $('dcStatusMsg').textContent=msg;toast(msg);
+ }
 }
 function editDirectoryCategory(id){const x=directoryTreeCache.find(v=>v.id===id);if(!x)return;$('dcEditId').value=id;$('dcTitle').value=x.title||'';$('dcIcon').value=x.icon||'';$('dcLogo').value=x.logoUrl||'';$('dcDesc').value=x.description||'';$('dcParent').value=x.parentId||'';$('dcStatus').value=x.status||'draft';window.scrollTo(0,0)}
 function clearDirectoryCategoryForm(){['dcEditId','dcTitle','dcIcon','dcLogo','dcDesc'].forEach(id=>$(id).value='');$('dcStatus').value='published'}

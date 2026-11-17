@@ -1058,7 +1058,10 @@ async function loadPublic(){
   renderGrid('toolsGrid',activeItems('tools'),'⚙️','এখনও কোনো Tool যোগ করা হয়নি।');
    renderFeaturedHome();
   renderNotices('notices','noticeList');await loadSocialPosts();
- $('statServices').textContent=activeItems('services').length;$('statTools').textContent=activeItems('tools').length;$('statBusinesses').textContent=activeItems('businesses').length;$('statGovernment').textContent=activeItems('government').length;$('statForms').textContent=activeItems('forms').length;$('statEvents').textContent=(cache.events||[]).filter(x=>x.status==='published').length;
+ // Dashboard counters are optional in some page layouts. Never let a missing
+ // counter element turn a successful Firestore save into a false save error.
+ const counters={statServices:activeItems('services').length,statTools:activeItems('tools').length,statBusinesses:activeItems('businesses').length,statGovernment:activeItems('government').length,statForms:activeItems('forms').length,statEvents:(cache.events||[]).filter(x=>x.status==='published').length};
+ Object.entries(counters).forEach(([id,value])=>{const el=$(id);if(el)el.textContent=String(value)});
 }
 function openAdmin(){if(user&&user.uid===ADMIN_UID)showAdmin();else openModal('loginModal')}
 async function loginAdmin(){ $('loginError').textContent='';try{let c=await auth.signInWithEmailAndPassword($('loginEmail').value,$('loginPassword').value);if(c.user.uid!==ADMIN_UID){await auth.signOut();throw Error('এই অ্যাকাউন্টটি অনুমোদিত Super Admin নয়।')}closeModal('loginModal');showAdmin()}catch(e){$('loginError').textContent=e.message}}

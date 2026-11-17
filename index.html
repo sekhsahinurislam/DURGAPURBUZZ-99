@@ -1540,4 +1540,55 @@ $('yearNow').textContent=new Date().getFullYear();loadPublic();initVisitorCounte
  .directory-custom-field-row{grid-template-columns:1fr;}
 }
 
+
+
+/* DESKTOP PHOTO SAFETY FIX — desktop only.
+   Show complete photos instead of cropping them inside fixed image frames.
+   No mobile styles or mobile breakpoints are modified. */
+@media (min-width: 601px) {
+  .pride-card {
+    min-height: 88px !important;
+    padding: 8px 11px !important;
+    gap: 12px !important;
+  }
+  .pride-card img {
+    width: 68px !important;
+    height: 68px !important;
+    flex: 0 0 68px !important;
+    border-radius: 10px !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #f1f5f2 !important;
+  }
+
+  .directory-person-image,
+  .directory-detail-image,
+  #detailImageWrap img {
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #f2f6f4 !important;
+  }
+
+  #blogsGrid .blog-cover,
+  .featured-strip .card img,
+  .featured-strip .blog-cover,
+  .featured-home .featured-article-card img,
+  .featured-article-card img,
+  .event-card img,
+  .social-post-card img,
+  .social-post-card > img,
+  .directory-popup-sheet img,
+  #socialFetchPreviewImg {
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #eef3f0 !important;
+  }
+
+  .directory-sub-card.db-wide > span img {
+    object-fit: contain !important;
+    object-position: center !important;
+    background: #f2f6f4 !important;
+  }
+}
+
 </style>

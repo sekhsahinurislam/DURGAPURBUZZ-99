@@ -964,13 +964,25 @@ function normalizeDirectorySuggestionConfig(raw={}){
  base.note=String(base.note||'');
  return base;
 }
+function getDirectorySuggestionTarget(current){
+ if(!current)return {key:'default',label:'সাধারণ ফর্ম'};
+ if(current.kind==='detail'){
+  const source=current.item?.sourceCollection||'directoryItems';
+  return source==='directDirectoryItems'?{key:'direct:'+current.id,label:'Direct Directory'}:{key:'listing:'+current.id,label:'Listing'};
+ }
+ if(current.kind==='main')return {key:'card:'+String(current.id||'').replace(/^main:/,''),label:'Card'};
+ return {key:'default',label:'সাধারণ ফর্ম'};
+}
 async function openDirectorySuggestForm(){
- const current=directoryTrail[directoryTrail.length-1];if(!current||current.kind==='detail')return;
+ const current=directoryTrail[directoryTrail.length-1];if(!current)return;
  const existing=$('directorySuggestOverlay');if(existing)existing.remove();
+ let allConfig;
  try{
   const snap=await db.collection('site').doc('directorySuggestionForm').get();
-  directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(snap.exists?snap.data():DEFAULT_DIRECTORY_SUGGESTION_FORM);
- }catch(e){console.warn('Suggestion form settings could not be loaded:',e);directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(DEFAULT_DIRECTORY_SUGGESTION_FORM);}
+  allConfig=normalizeDirectorySuggestionConfig(snap.exists?snap.data():DEFAULT_DIRECTORY_SUGGESTION_FORM);
+ }catch(e){console.warn('Suggestion form settings could not be loaded:',e);allConfig=normalizeDirectorySuggestionConfig(DEFAULT_DIRECTORY_SUGGESTION_FORM);}
+ const target=getDirectorySuggestionTarget(current);
+ directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(allConfig.targetForms?.[target.key]||allConfig);
  const cfg=directorySuggestionFormConfig;
  const form=document.createElement('div');form.className='directory-suggest-overlay';form.id='directorySuggestOverlay';
  const fields=cfg.fields.filter(f=>f.enabled).map((f,i)=>{
@@ -1181,7 +1193,11 @@ const adminGroups=[
 let directorySuggestionAdminFields=[];
 function directorySuggestionFormAdmin(){
  $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>তথ্য জমা দিন Form Control</h3></div>
- <p>Directory-র + বাটনে ক্লিক করলে যে Form খুলবে, তার শিরোনাম, নির্দেশনা, WhatsApp নম্বর, Button এবং প্রতিটি Field এখান থেকে নিয়ন্ত্রণ করুন। এই সেটিং শুধু Public Suggestion Form-এ প্রযোজ্য।</p>
+ <p>প্রথমে কোন জায়গার Form পরিবর্তন করবেন তা নির্বাচন করুন। একটি নির্দিষ্ট Listing, Direct Directory বা Card-এর Form আলাদাভাবে নিয়ন্ত্রণ করা যাবে। কোনো নির্দিষ্ট Form না থাকলে সাধারণ Form চালু থাকবে।</p>
+ <div class="admin-card" style="background:#f5faf7;border:1px solid #cfe3d8"><div class="formgrid">
+  <div class="field"><label>কোন ধরনের জায়গা?</label><select id="dsTargetType" onchange="loadSuggestionTargetOptions()"><option value="listing">Listing — নির্দিষ্ট Listing নির্বাচন করুন</option><option value="direct">Direct Directory — নির্দিষ্ট Direct Directory নির্বাচন করুন</option><option value="card">Card — নির্দিষ্ট Card নির্বাচন করুন</option></select></div>
+  <div class="field"><label>নির্দিষ্ট জায়গা নির্বাচন করুন</label><select id="dsTargetId" onchange="loadSelectedSuggestionTargetForm()"><option value="">লোড হচ্ছে...</option></select></div>
+ </div><small id="dsTargetStatus">নির্বাচিত জায়গার Form Settings পরিবর্তন হবে। অন্য জায়গার Form অপরিবর্তিত থাকবে।</small></div>
  <div class="formgrid">
   <div class="field"><label>Form Title</label><input id="dsAdminTitle" maxlength="100"></div>
   <div class="field"><label>Submit Button Text</label><input id="dsAdminButton" maxlength="70"></div>
@@ -1206,7 +1222,40 @@ async function loadDirectorySuggestionFormAdmin(){
   $('dsAdminTitle').value=cfg.title;$('dsAdminButton').value=cfg.buttonText;$('dsAdminIntro').value=cfg.intro;$('dsAdminNote').value=cfg.note;$('dsAdminWhatsApp').value=cfg.whatsappNumber;
   directorySuggestionAdminFields=cfg.fields.map(x=>({...x}));
   renderDirectorySuggestionAdminFields();
+  await loadSuggestionTargetOptions();
  }catch(e){if(status)status.textContent='Settings লোড হয়নি: '+e.message;toast(e.message)}
+}
+let directorySuggestionTargetOptions=[];
+function suggestionTargetKey(){const type=$('dsTargetType')?.value||'listing',id=$('dsTargetId')?.value||'';return type+':'+id;}
+async function loadSuggestionTargetOptions(){
+ const type=$('dsTargetType')?.value||'listing',select=$('dsTargetId');if(!select)return;
+ select.innerHTML='<option value="">লোড হচ্ছে...</option>';
+ try{
+  let rows=[];
+  if(type==='listing'){
+   const snap=await db.collection('directoryItems').get();rows=snap.docs.map(d=>({id:d.id,title:d.data().title||'নাম নেই'}));
+  }else if(type==='direct'){
+   const snap=await db.collection('directDirectoryItems').get();rows=snap.docs.map(d=>({id:d.id,title:d.data().title||'নাম নেই'}));
+  }else{
+   rows=[...managedCards(1),...managedCards(2)].map(c=>({id:mainCardKey(c.search||c.title),title:c.title||c.search||'Card'}));
+  }
+  directorySuggestionTargetOptions=rows;
+  select.innerHTML=rows.length?rows.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join(''):'<option value="">এই ধরনের কোনো তথ্য পাওয়া যায়নি</option>';
+  if(rows.length)await loadSelectedSuggestionTargetForm();
+ }catch(e){select.innerHTML='<option value="">লোড হয়নি</option>';toast('Target list load হয়নি: '+e.message);}
+}
+async function loadSelectedSuggestionTargetForm(){
+ const id=$('dsTargetId')?.value;if(!id)return;
+ const key=suggestionTargetKey(),status=$('dsTargetStatus');
+ try{
+  const snap=await db.collection('site').doc('directorySuggestionForm').get();
+  const all=normalizeDirectorySuggestionConfig(snap.exists?snap.data():DEFAULT_DIRECTORY_SUGGESTION_FORM);
+  const custom=all.targetForms?.[key];
+  const cfg=normalizeDirectorySuggestionConfig(custom||all);
+  $('dsAdminTitle').value=cfg.title;$('dsAdminButton').value=cfg.buttonText;$('dsAdminIntro').value=cfg.intro;$('dsAdminNote').value=cfg.note;$('dsAdminWhatsApp').value=cfg.whatsappNumber;
+  directorySuggestionAdminFields=cfg.fields.map(x=>({...x}));renderDirectorySuggestionAdminFields();
+  if(status)status.textContent=custom?'এই নির্দিষ্ট জায়গার Custom Form লোড হয়েছে।':'এখনো Custom Form নেই — বর্তমানে সাধারণ Form-এর সেটিং দেখানো হচ্ছে। Save করলে শুধু নির্বাচিত জায়গায় আলাদা Form তৈরি হবে।';
+ }catch(e){if(status)status.textContent='Form লোড হয়নি: '+e.message;}
 }
 function addDirectorySuggestionAdminField(field={}){
  directorySuggestionAdminFields.push({key:'custom_'+Date.now()+'_'+directorySuggestionAdminFields.length,label:field.label||'নতুন Field',type:field.type||'text',placeholder:field.placeholder||'',required:!!field.required,enabled:field.enabled!==false,custom:true});
@@ -1248,9 +1297,10 @@ async function saveDirectorySuggestionFormConfig(){
  if(!fields.some(f=>f.enabled&&f.required)){toast('কমপক্ষে একটি Enabled Required Field রাখুন');return}
  const phone=String($('dsAdminWhatsApp').value||'').replace(/\D/g,'');
  if(phone.length<10){toast('সঠিক WhatsApp নম্বর দিন');return}
- const data={title:$('dsAdminTitle').value.trim()||'তথ্য জমা দিন',buttonText:$('dsAdminButton').value.trim()||'WhatsApp-এ পাঠান',intro:$('dsAdminIntro').value.trim(),note:$('dsAdminNote').value.trim(),whatsappNumber:phone,fields,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ const data={title:$('dsAdminTitle').value.trim()||'তথ্য জমা দিন',buttonText:$('dsAdminButton').value.trim()||'WhatsApp-এ পাঠান',intro:$('dsAdminIntro').value.trim(),note:$('dsAdminNote').value.trim(),whatsappNumber:phone,fields};
+ const targetKey=suggestionTargetKey();if(!$('dsTargetId')?.value){toast('প্রথমে নির্দিষ্ট Listing / Direct Directory / Card নির্বাচন করুন');return;}
  const btn=$('saveDirectorySuggestionConfigBtn'),status=$('dsAdminStatus');
- try{btn.disabled=true;btn.textContent='Saving...';await db.collection('site').doc('directorySuggestionForm').set(data,{merge:true});directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(data);status.textContent='Form Settings সফলভাবে Save হয়েছে।';toast('Suggestion Form Settings Saved');}
+ try{btn.disabled=true;btn.textContent='Saving...';const ref=db.collection('site').doc('directorySuggestionForm');const snap=await ref.get();const old=snap.exists?snap.data():{};const targetForms={...(old.targetForms||{}),[targetKey]:data};await ref.set({targetForms,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(data);status.textContent='নির্বাচিত জায়গার Custom Form সফলভাবে Save হয়েছে।';toast('Selected Form Saved');}
  catch(e){status.textContent='Save হয়নি: '+e.message;toast(e.message)}
  finally{btn.disabled=false;btn.textContent='Save Form Settings'}
 }

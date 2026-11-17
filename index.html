@@ -604,6 +604,19 @@ button.admin-back:hover,button.admin-back:focus-visible{
   }
 }
 
+
+/* Keep the compact search field inside the listing page header */
+#directoryExplorer .directory-explorer-head{display:flex;align-items:center;gap:10px}
+#directoryExplorer .directory-explorer-heading{flex:1;min-width:0}
+#directoryExplorer .directory-explorer-search{position:static;flex:0 0 auto;width:auto;padding:0;margin:0;background:transparent;z-index:auto}
+#directoryExplorer .directory-explorer-search input{display:block;width:clamp(112px,30vw,190px)!important;max-width:100%;padding:8px 10px!important;font-size:14px!important;border-radius:12px}
+@media(max-width:420px){
+ #directoryExplorer .directory-explorer-head{gap:7px}
+ #directoryExplorer .directory-explorer-head>.btn{font-size:12px;padding:7px 9px}
+ #directoryExplorer .directory-explorer-heading h2{font-size:19px}
+ #directoryExplorer .directory-explorer-search input{width:112px!important;font-size:12px!important}
+}
+
 </style>
 <style id="event-four-tabs-style">.event-tabs-four{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px!important;width:100%;align-items:stretch}.event-tabs-four .event-tab{min-width:0!important;width:100%;padding:9px 4px!important;font-size:clamp(9px,2.5vw,13px)!important;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-suggest-toggle{border:1px solid var(--cyan,#22d3ee)!important}.event-suggest-toggle.active{background:var(--cyan,#22d3ee)!important;color:#07111f!important}.event-suggest-box{max-width:100%;}.event-suggest-box .field{margin:6px 0}.event-suggest-box .field input,.event-suggest-box .field select,.event-suggest-box .field textarea{width:100%;box-sizing:border-box}@media(max-width:360px){.event-tabs-four{gap:3px!important}.event-tabs-four .event-tab{padding:8px 2px!important;font-size:9px!important}}</style>
 <style id="hero-left-corner-compact">
@@ -678,8 +691,7 @@ button.admin-back:hover,button.admin-back:focus-visible{
 
 <div class="modal" id="loginModal"><div class="modalbox" style="max-width:420px"><div class="modalhead"><h2>Admin Login</h2><button class="btn ghost" onclick="closeModal('loginModal')">✕</button></div><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div><p id="loginError" style="color:#ff7c9e"></p><button class="btn primary" onclick="loginAdmin()">Login</button></div></div>
 <div id="directoryExplorer" class="directory-explorer" aria-live="polite" style="display:none">
-  <div class="directory-explorer-head"><button class="btn ghost" onclick="closeDirectoryExplorer()">← ফিরে যান</button><div><h2 id="directoryExplorerTitle">বিভাগ</h2><p id="directoryExplorerPath"></p></div></div>
-  <div class="directory-explorer-search"><input id="directoryExplorerSearch" placeholder="এই বিভাগের মধ্যে খুঁজুন..." oninput="renderDirectoryExplorer()"></div>
+  <div class="directory-explorer-head"><button class="btn ghost" onclick="closeDirectoryExplorer()">← ফিরে যান</button><div class="directory-explorer-heading"><h2 id="directoryExplorerTitle">বিভাগ</h2><p id="directoryExplorerPath"></p></div><div class="directory-explorer-search"><input id="directoryExplorerSearch" placeholder="খুঁজুন..." oninput="renderDirectoryExplorer()"></div></div>
   <div id="directoryExplorerGrid" class="directory-explorer-grid"></div>
 </div>
 <div class="modal" id="adminModal"><div class="modalbox"><div class="modalhead"><div><h2 style="margin:0">DURGAPUR BUZZ CONTROL CENTER</h2><small id="adminIdentity" style="color:var(--muted)"></small></div><div><button class="btn ghost" onclick="closeAdmin()">Close</button><button class="btn" onclick="logoutAdmin()">Logout</button></div></div><div class="admin-layout"><aside class="side-tabs" id="adminTabs"></aside><div class="admin-content" id="adminContent"></div></div></div></div>

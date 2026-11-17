@@ -1,53 +1,84 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // DURGAPUR BUZZ Super Admin
     function isAdmin() {
-      return request.auth != null && request.auth.uid == "QdERp0w3SAaS18UWc7qkjIXZmii2";
+      return request.auth != null
+        && request.auth.uid == "QdERp0w3SAaS18UWc7qkjIXZmii2";
     }
 
-    // Original DURGAPUR BUZZ news: old documents remain in place and readable.
-    match /news/{newsId} {
-      allow read: if (resource.data.status == "published") || isAdmin();
-      allow create, update, delete: if isAdmin();
+    // Public can read published content. Admin can read drafts/hidden content too.
+    function canReadPublishedOrAdmin() {
+      return isAdmin()
+        || (resource.data.status is string
+            && resource.data.status == "published");
     }
 
-    // Existing website settings and logo.
+    // Content collections managed from the Admin Panel.
+    // Public read is limited to published documents; all writes are Admin-only.
+    match /{collectionName}/{documentId} {
+      allow read: if collectionName in [
+          "tools",
+          "notices",
+          "events",
+          "socialPosts",
+          "featuredItems",
+          "pridePeople",
+          "directoryCategories",
+          "directoryItems",
+          "directDirectoryItems",
+          "listingPageControls"
+        ] && canReadPublishedOrAdmin();
+
+      allow write: if collectionName in [
+          "tools",
+          "notices",
+          "events",
+          "socialPosts",
+          "featuredItems",
+          "pridePeople",
+          "directoryCategories",
+          "directoryItems",
+          "directDirectoryItems",
+          "listingPageControls"
+        ] && isAdmin();
+    }
+
+    // Website settings and public Directory submission-form configuration.
+    // Public read is required by the website; only the Super Admin can change them.
     match /site/{documentId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
-    // Admin-managed listing page appearance settings.
-    match /siteSettings/{documentId} {
+    match /directorySuggestionForm/{documentId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
-    // Count every successful website opening/page load. Only the aggregate counter can be incremented publicly.
+    // Legacy / general suggestions: admin may review and delete.
+    // No public client-side Firestore submission is enabled in the current HTML.
+    match /suggestions/{documentId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Public visitor counter. Only allow creation at 1 and +1 increments.
+    // Other fields cannot be modified by public clients.
     match /site/visitorCounter {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(["count", "updatedAt"])
+
+      allow create: if request.resource.data.keys().hasOnly([
+          "count", "updatedAt"
+        ])
         && request.resource.data.count == 1;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(["count", "updatedAt"])
+
+      allow update: if request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(["count", "updatedAt"])
         && request.resource.data.count == resource.data.count + 1;
+
       allow delete: if isAdmin();
-    }
-
-    // New service-hub collections. Public queries must filter status == published.
-    match /{collection}/{itemId} {
-      allow read: if collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople", "listingPageControls"]
-        && (resource.data.status == "published" || isAdmin());
-      allow create, update, delete: if isAdmin()
-        && collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople", "listingPageControls"];
-    }
-
-    // Public suggestion submission; only Super Admin can read or manage submissions.
-    match /suggestions/{suggestionId} {
-      allow create: if request.resource.data.keys().hasOnly(["name", "message", "status", "createdAt"])
-        && request.resource.data.message is string
-        && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 2000;
-      allow read, update, delete: if isAdmin();
     }
   }
 }

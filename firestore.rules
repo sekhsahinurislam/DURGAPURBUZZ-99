@@ -17,6 +17,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Admin-managed listing page appearance settings.
+    match /siteSettings/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Count every successful website opening/page load. Only the aggregate counter can be incremented publicly.
     match /site/visitorCounter {
       allow read: if true;
@@ -29,10 +35,10 @@ service cloud.firestore {
 
     // New service-hub collections. Public queries must filter status == published.
     match /{collection}/{itemId} {
-      allow read: if collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople"]
+      allow read: if collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople", "listingPageControls"]
         && (resource.data.status == "published" || isAdmin());
       allow create, update, delete: if isAdmin()
-        && collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople"];
+        && collection in ["services", "tools", "government", "forms", "businesses", "blogs", "notices", "announcements", "socialPosts", "events", "directoryCategories", "directoryItems", "directDirectoryItems", "featuredItems", "pridePeople", "listingPageControls"];
     }
 
     // Public suggestion submission; only Super Admin can read or manage submissions.

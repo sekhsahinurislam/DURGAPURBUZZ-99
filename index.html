@@ -408,6 +408,15 @@ html,body{max-width:100%;overflow-x:hidden}
 .directory-action{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#fff!important;background:#176b55!important;border:1px solid #176b55!important;font-weight:700}
 .whatsapp-action{background:#16834b!important;border-color:#16834b!important;color:#fff!important}
 .directory-suggest-overlay{position:fixed;z-index:10020;inset:0;background:rgba(8,25,20,.58);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:14px}
+
+.ds-admin-fields{display:grid;gap:12px}
+.ds-admin-field{border:1px solid var(--line,#dbe5df);border-radius:14px;padding:14px;background:var(--surface,#fff)}
+.ds-admin-field-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ds-admin-field-actions{display:flex;gap:6px;flex-wrap:wrap}
+.ds-admin-field .formgrid{margin:0}
+.ds-admin-field input,.ds-admin-field select{max-width:100%;min-width:0}
+@media(max-width:700px){.ds-admin-field{padding:11px}.ds-admin-field-actions .btn{padding:7px 9px}}
+
 .directory-suggest-form{width:min(100%,560px);background:#fff;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:9px;margin:auto;max-height:calc(100dvh - 28px);overflow:auto}
 .directory-suggest-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.directory-suggest-head h3{margin:0;color:#173b32}
 .directory-suggest-form label{font-size:14px;font-weight:700;color:#28483e;margin-top:4px}
@@ -915,14 +924,81 @@ function renderDirectoryExplorer(){
 }
 function showDirectoryFab(){let b=$('directoryFab');if(!b){b=document.createElement('button');b.id='directoryFab';b.type='button';b.className='directory-fab';b.setAttribute('aria-label','WhatsApp-এ তথ্য জমা দিন');b.innerHTML='<span aria-hidden="true">+</span>';b.onclick=openDirectorySuggestForm;document.body.appendChild(b)}b.style.display='grid'}
 function hideDirectoryFab(){const b=$('directoryFab');if(b)b.style.display='none'}
-function openDirectorySuggestForm(){
+const DEFAULT_DIRECTORY_SUGGESTION_FORM={
+ title:'তথ্য জমা দিন',
+ intro:'আপনি অন্য কোনো ব্যক্তি, ডাক্তার বা প্রতিষ্ঠানের তথ্যও জমা দিতে পারবেন। নিজের নাম দেওয়ার প্রয়োজন নেই।',
+ buttonText:'WhatsApp-এ পাঠান',
+ note:'তথ্য সরাসরি প্রকাশ হবে না। Admin যাচাই করে নিজে যুক্ত করবেন।',
+ whatsappNumber:DIRECTORY_WHATSAPP_NUMBER,
+ fields:[
+  {key:'listingName',label:'ব্যক্তি / ডাক্তার / প্রতিষ্ঠানের নাম',type:'text',placeholder:'যাঁর তথ্য জমা দিচ্ছেন তাঁর নাম',required:true,enabled:true},
+  {key:'imageUrl',label:'ছবি URL',type:'url',placeholder:'https://...',required:false,enabled:true},
+  {key:'qualification',label:'যোগ্যতা / ধরন / বিশেষত্ব',type:'text',placeholder:'',required:false,enabled:true},
+  {key:'organization',label:'প্রতিষ্ঠান / চেম্বার',type:'text',placeholder:'',required:false,enabled:true},
+  {key:'contact',label:'ফোন / যোগাযোগ নম্বর',type:'tel',placeholder:'',required:false,enabled:true},
+  {key:'address',label:'ঠিকানা',type:'textarea',placeholder:'',required:false,enabled:true},
+  {key:'mapUrl',label:'Google Maps URL',type:'url',placeholder:'https://maps.google.com/...',required:false,enabled:true},
+  {key:'description',label:'অতিরিক্ত বিবরণ',type:'textarea',placeholder:'',required:false,enabled:true}
+ ]
+};
+let directorySuggestionFormConfig={...DEFAULT_DIRECTORY_SUGGESTION_FORM};
+function normalizeDirectorySuggestionConfig(raw={}){
+ const base={...DEFAULT_DIRECTORY_SUGGESTION_FORM,...(raw||{})};
+ const allowed=['text','url','tel','textarea'];
+ base.fields=(Array.isArray(raw?.fields)?raw.fields:DEFAULT_DIRECTORY_SUGGESTION_FORM.fields).map((f,i)=>({
+  key:String(f.key||('custom_'+i)).replace(/[^a-zA-Z0-9_-]/g,'_'),
+  label:String(f.label||'নতুন তথ্য').slice(0,100),
+  type:allowed.includes(f.type)?f.type:'text',
+  placeholder:String(f.placeholder||'').slice(0,180),
+  required:!!f.required,enabled:f.enabled!==false,
+  custom:!!f.custom
+ }));
+ if(!base.fields.some(f=>f.enabled&&f.required)) {
+  const name=base.fields.find(f=>f.key==='listingName');
+  if(name){name.enabled=true;name.required=true;}
+ }
+ base.whatsappNumber=String(base.whatsappNumber||DIRECTORY_WHATSAPP_NUMBER).replace(/\D/g,'')||DIRECTORY_WHATSAPP_NUMBER;
+ base.title=String(base.title||'তথ্য জমা দিন');
+ base.intro=String(base.intro||'');
+ base.buttonText=String(base.buttonText||'WhatsApp-এ পাঠান');
+ base.note=String(base.note||'');
+ return base;
+}
+async function openDirectorySuggestForm(){
  const current=directoryTrail[directoryTrail.length-1];if(!current||current.kind==='detail')return;
+ const existing=$('directorySuggestOverlay');if(existing)existing.remove();
+ try{
+  const snap=await db.collection('site').doc('directorySuggestionForm').get();
+  directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(snap.exists?snap.data():DEFAULT_DIRECTORY_SUGGESTION_FORM);
+ }catch(e){console.warn('Suggestion form settings could not be loaded:',e);directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(DEFAULT_DIRECTORY_SUGGESTION_FORM);}
+ const cfg=directorySuggestionFormConfig;
  const form=document.createElement('div');form.className='directory-suggest-overlay';form.id='directorySuggestOverlay';
- form.innerHTML=`<form class="directory-suggest-form" onsubmit="sendDirectorySuggestion(event)"><div class="directory-suggest-head"><h3>তথ্য জমা দিন</h3><button type="button" class="btn ghost" onclick="closeDirectorySuggestForm()">বন্ধ করুন ✕</button></div><p>বিভাগ: <b>${esc(directoryTrail.map(x=>x.title).join(' › '))}</b></p><p class="directory-form-note">আপনি অন্য কোনো ব্যক্তি, ডাক্তার বা প্রতিষ্ঠানের তথ্যও জমা দিতে পারবেন। নিজের নাম দেওয়ার প্রয়োজন নেই।</p><label>ব্যক্তি / ডাক্তার / প্রতিষ্ঠানের নাম *</label><input id="dsListingName" required maxlength="120" placeholder="যাঁর তথ্য জমা দিচ্ছেন তাঁর নাম"><label>ছবি URL</label><input id="dsImageUrl" type="url" placeholder="https://..."><label>যোগ্যতা / ধরন / বিশেষত্ব</label><input id="dsQualification" maxlength="160"><label>প্রতিষ্ঠান / চেম্বার</label><input id="dsOrganization" maxlength="160"><label>ফোন / যোগাযোগ নম্বর</label><input id="dsContact" type="tel" inputmode="tel" maxlength="20"><label>ঠিকানা</label><textarea id="dsAddress" rows="2" maxlength="300"></textarea><label>Google Maps URL</label><input id="dsMapUrl" type="url" placeholder="https://maps.google.com/..."><label>অতিরিক্ত বিবরণ</label><textarea id="dsDescription" rows="3" maxlength="700"></textarea><button class="btn primary whatsapp-action directory-submit" type="submit">WhatsApp-এ পাঠান</button><small>তথ্য সরাসরি প্রকাশ হবে না। Admin যাচাই করে নিজে যুক্ত করবেন।</small></form>`;
+ const fields=cfg.fields.filter(f=>f.enabled).map((f,i)=>{
+  const tag=f.type==='textarea'?'textarea':'input';
+  const attrs=f.type==='url'?' type="url"':f.type==='tel'?' type="tel" inputmode="tel"':' type="text"';
+  const required=f.required?' required':'';
+  const placeholder=f.placeholder?` placeholder="${esc(f.placeholder)}"`:'';
+  return `<label>${esc(f.label)}${f.required?' *':''}</label>${tag==='textarea'?`<textarea data-suggest-index="${i}" rows="3"${required}${placeholder}></textarea>`:`<input data-suggest-index="${i}"${attrs}${required}${placeholder} maxlength="500">`}`;
+ }).join('');
+ form.innerHTML=`<form class="directory-suggest-form" onsubmit="sendDirectorySuggestion(event)"><div class="directory-suggest-head"><h3>${esc(cfg.title)}</h3><button type="button" class="btn ghost" onclick="closeDirectorySuggestForm()">বন্ধ করুন ✕</button></div><p>বিভাগ: <b>${esc(directoryTrail.map(x=>x.title).join(' › '))}</b></p>${cfg.intro?`<p class="directory-form-note">${esc(cfg.intro)}</p>`:''}${fields}<button class="btn primary whatsapp-action directory-submit" type="submit">${esc(cfg.buttonText)}</button>${cfg.note?`<small>${esc(cfg.note)}</small>`:''}</form>`;
  document.body.appendChild(form);document.body.style.overflow='hidden';
 }
 function closeDirectorySuggestForm(){const x=$('directorySuggestOverlay');if(x)x.remove();document.body.style.overflow='hidden'}
-function sendDirectorySuggestion(event){event.preventDefault();const rows=[['বিভাগ',directoryTrail.map(x=>x.title).join(' › ')],['ব্যক্তি / প্রতিষ্ঠানের নাম',$('dsListingName').value],['ছবি URL',$('dsImageUrl').value],['যোগ্যতা / বিশেষত্ব',$('dsQualification').value],['প্রতিষ্ঠান',$('dsOrganization').value],['যোগাযোগ',$('dsContact').value],['ঠিকানা',$('dsAddress').value],['Google Maps',$('dsMapUrl').value],['বিবরণ',$('dsDescription').value]];const msg='DURGAPUR BUZZ — নতুন Directory তথ্য\n\n'+rows.filter(x=>String(x[1]||'').trim()).map(x=>x[0]+': '+x[1]).join('\n');window.open('https://wa.me/'+DIRECTORY_WHATSAPP_NUMBER+'?text='+encodeURIComponent(msg),'_blank','noopener');closeDirectorySuggestForm()}
+function sendDirectorySuggestion(event){
+ event.preventDefault();
+ const cfg=normalizeDirectorySuggestionConfig(directorySuggestionFormConfig);
+ const rows=[['বিভাগ',directoryTrail.map(x=>x.title).join(' › ')]];
+ const visible=cfg.fields.filter(f=>f.enabled);
+ visible.forEach((field,i)=>{
+  const input=document.querySelector(`#directorySuggestOverlay [data-suggest-index="${i}"]`);
+  const value=String(input?.value||'').trim();
+  if(value)rows.push([field.label,value]);
+ });
+ const msg='DURGAPUR BUZZ — নতুন Directory তথ্য\n\n'+rows.map(x=>x[0]+': '+x[1]).join('\n');
+ const phone=cfg.whatsappNumber||DIRECTORY_WHATSAPP_NUMBER;
+ window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank','noopener');
+ closeDirectorySuggestForm();
+}
 window.addEventListener('popstate',function(){if($('directorySuggestOverlay')){closeDirectorySuggestForm();return;}if($('directoryExplorer').style.display!=='none'){if(directoryTrail.length>1){directoryTrail.pop();$('directoryExplorerSearch').value='';renderDirectoryExplorer()}else{$('directoryExplorer').style.display='none';document.body.style.overflow='';hideDirectoryFab();}}});
 function quickDirectory(term){const card=[...managedCards(1),...managedCards(2)].find(x=>String(x.search||x.title).trim()===String(term).trim()||String(x.title).trim()===String(term).trim());openDirectoryRoot(term,card?.directoryMode==='direct')}
 function openFeaturedArticle(id){const x=(cache.featuredItems||[]).find(v=>v.id===id);if(!x)return;openItemDetail(encodeURIComponent(JSON.stringify({...x,category:'Featured Article',description:x.shortDescription||x.description||'',fullArticle:x.fullArticle||''})));$('detailCategory').textContent='FEATURED';$('detailOpenLink').style.display='none';}
@@ -1100,8 +1176,91 @@ const adminGroups=[
  ['Dashboard',[['dashboard','Overview']]],
  ['Content Management',[['tools','Online Tools'],['events','Events'],['socialYoutube','YouTube'],['socialFacebook','Facebook'],['socialInstagram','Instagram'],]],
  ['Notices & Communication',[['notices','Notice Board'],['suggestions','User Suggestions']]],
- ['Website Control',[['heroBannerControl','Hero Slider Control'],['featuredAdmin','Featured Management'],['prideAdmin','দুর্গাপুরের গর্ব'],['quickCardsAdmin','Main Card Management (1 & 2)'],['directoryCategoriesAdmin','Sub-Category Management'],['directoryItemsAdmin','Directory Listing Management'],['movingNoticeAdmin','Moving Notice Management'],['popupNoticeAdmin','Popup Notice Management'],['directDirectoryAdmin','Direct Directory Management (New)'],['settings','Homepage & Website Settings'],['menuManager','Menu Management']]]
+ ['Website Control',[['directorySuggestionFormAdmin','তথ্য জমা দিন Form Control'],['heroBannerControl','Hero Slider Control'],['featuredAdmin','Featured Management'],['prideAdmin','দুর্গাপুরের গর্ব'],['quickCardsAdmin','Main Card Management (1 & 2)'],['directoryCategoriesAdmin','Sub-Category Management'],['directoryItemsAdmin','Directory Listing Management'],['movingNoticeAdmin','Moving Notice Management'],['popupNoticeAdmin','Popup Notice Management'],['directDirectoryAdmin','Direct Directory Management (New)'],['settings','Homepage & Website Settings'],['menuManager','Menu Management']]]
 ];
+let directorySuggestionAdminFields=[];
+function directorySuggestionFormAdmin(){
+ $('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>তথ্য জমা দিন Form Control</h3></div>
+ <p>Directory-র + বাটনে ক্লিক করলে যে Form খুলবে, তার শিরোনাম, নির্দেশনা, WhatsApp নম্বর, Button এবং প্রতিটি Field এখান থেকে নিয়ন্ত্রণ করুন। এই সেটিং শুধু Public Suggestion Form-এ প্রযোজ্য।</p>
+ <div class="formgrid">
+  <div class="field"><label>Form Title</label><input id="dsAdminTitle" maxlength="100"></div>
+  <div class="field"><label>Submit Button Text</label><input id="dsAdminButton" maxlength="70"></div>
+  <div class="field span2"><label>Form-এর উপরের নির্দেশনা</label><textarea id="dsAdminIntro" rows="2"></textarea></div>
+  <div class="field span2"><label>Submit Button-এর নিচের Note</label><textarea id="dsAdminNote" rows="2"></textarea></div>
+  <div class="field span2"><label>WhatsApp নম্বর (Country Code সহ, শুধু সংখ্যা)</label><input id="dsAdminWhatsApp" inputmode="numeric" placeholder="917479095466"><small>এখানে নম্বর বদলালে তথ্য নতুন নম্বরে পাঠানো হবে।</small></div>
+ </div></div>
+ <div class="admin-card"><div class="row" style="align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3>Form Fields Control</h3><button class="btn primary" type="button" onclick="addDirectorySuggestionAdminField()">+ Add New Field</button></div>
+ <p>Field-এর নাম, ধরন, Placeholder, Required এবং Enable/Disable নিয়ন্ত্রণ করুন। Field-এর ক্রম বদলাতে ↑ ↓ ব্যবহার করুন।</p>
+ <div id="dsAdminFields" class="ds-admin-fields"></div>
+ <button class="btn primary" type="button" id="saveDirectorySuggestionConfigBtn" onclick="saveDirectorySuggestionFormConfig()">Save Form Settings</button>
+ <button class="btn ghost" type="button" onclick="resetDirectorySuggestionFormConfig()">Default Restore</button>
+ <p id="dsAdminStatus" role="status"></p></div>`;
+ loadDirectorySuggestionFormAdmin();
+}
+async function loadDirectorySuggestionFormAdmin(){
+ const status=$('dsAdminStatus');
+ try{
+  const snap=await db.collection('site').doc('directorySuggestionForm').get();
+  const cfg=normalizeDirectorySuggestionConfig(snap.exists?snap.data():DEFAULT_DIRECTORY_SUGGESTION_FORM);
+  directorySuggestionFormConfig=cfg;
+  $('dsAdminTitle').value=cfg.title;$('dsAdminButton').value=cfg.buttonText;$('dsAdminIntro').value=cfg.intro;$('dsAdminNote').value=cfg.note;$('dsAdminWhatsApp').value=cfg.whatsappNumber;
+  directorySuggestionAdminFields=cfg.fields.map(x=>({...x}));
+  renderDirectorySuggestionAdminFields();
+ }catch(e){if(status)status.textContent='Settings লোড হয়নি: '+e.message;toast(e.message)}
+}
+function addDirectorySuggestionAdminField(field={}){
+ directorySuggestionAdminFields.push({key:'custom_'+Date.now()+'_'+directorySuggestionAdminFields.length,label:field.label||'নতুন Field',type:field.type||'text',placeholder:field.placeholder||'',required:!!field.required,enabled:field.enabled!==false,custom:true});
+ renderDirectorySuggestionAdminFields();
+}
+function renderDirectorySuggestionAdminFields(){
+ const host=$('dsAdminFields');if(!host)return;
+ host.innerHTML=directorySuggestionAdminFields.map((f,i)=>`<div class="ds-admin-field" data-index="${i}">
+  <div class="ds-admin-field-head"><strong>Field ${i+1}</strong><div class="ds-admin-field-actions"><button class="btn ghost" type="button" onclick="moveDirectorySuggestionAdminField(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn ghost" type="button" onclick="moveDirectorySuggestionAdminField(${i},1)" ${i===directorySuggestionAdminFields.length-1?'disabled':''}>↓</button>${f.custom?`<button class="btn" type="button" onclick="removeDirectorySuggestionAdminField(${i})">Delete</button>`:''}</div></div>
+  <div class="formgrid">
+   <div class="field"><label>Field Name / Label</label><input data-prop="label" value="${esc(f.label)}" maxlength="100"></div>
+   <div class="field"><label>Field Type</label><select data-prop="type"><option value="text" ${f.type==='text'?'selected':''}>Text Box</option><option value="textarea" ${f.type==='textarea'?'selected':''}>Long Text Box</option><option value="url" ${f.type==='url'?'selected':''}>URL Box</option><option value="tel" ${f.type==='tel'?'selected':''}>Phone Number</option></select></div>
+   <div class="field span2"><label>Placeholder / Hint</label><input data-prop="placeholder" value="${esc(f.placeholder||'')}" maxlength="180"></div>
+   <div class="field"><label>Required?</label><select data-prop="required"><option value="false" ${!f.required?'selected':''}>না</option><option value="true" ${f.required?'selected':''}>হ্যাঁ</option></select></div>
+   <div class="field"><label>Field Status</label><select data-prop="enabled"><option value="true" ${f.enabled?'selected':''}>Enabled</option><option value="false" ${!f.enabled?'selected':''}>Disabled</option></select></div>
+  </div></div>`).join('')||'<p>কোনো Field নেই। Add New Field চাপুন।</p>';
+}
+function syncDirectorySuggestionAdminFields(){
+ const host=$('dsAdminFields');if(!host)return;
+ [...host.querySelectorAll('.ds-admin-field')].forEach(row=>{
+  const i=Number(row.dataset.index),get=p=>row.querySelector(`[data-prop="${p}"]`);
+  const f=directorySuggestionAdminFields[i];if(!f)return;
+  f.label=get('label')?.value.trim()||'';f.type=get('type')?.value||'text';f.placeholder=get('placeholder')?.value||'';
+  f.required=get('required')?.value==='true';f.enabled=get('enabled')?.value==='true';
+ });
+}
+function moveDirectorySuggestionAdminField(index,delta){
+ syncDirectorySuggestionAdminFields();const next=index+delta;if(next<0||next>=directorySuggestionAdminFields.length)return;
+ const [item]=directorySuggestionAdminFields.splice(index,1);directorySuggestionAdminFields.splice(next,0,item);renderDirectorySuggestionAdminFields();
+}
+function removeDirectorySuggestionAdminField(index){
+ syncDirectorySuggestionAdminFields();if(!confirm('এই Field মুছে ফেলবেন?'))return;
+ directorySuggestionAdminFields.splice(index,1);renderDirectorySuggestionAdminFields();
+}
+async function saveDirectorySuggestionFormConfig(){
+ if(!user||user.uid!==ADMIN_UID){toast('Admin login প্রয়োজন');return}
+ syncDirectorySuggestionAdminFields();
+ const fields=directorySuggestionAdminFields.filter(f=>f.label).map((f,i)=>({...f,key:f.key||('custom_'+i)}));
+ if(!fields.some(f=>f.enabled&&f.required)){toast('কমপক্ষে একটি Enabled Required Field রাখুন');return}
+ const phone=String($('dsAdminWhatsApp').value||'').replace(/\D/g,'');
+ if(phone.length<10){toast('সঠিক WhatsApp নম্বর দিন');return}
+ const data={title:$('dsAdminTitle').value.trim()||'তথ্য জমা দিন',buttonText:$('dsAdminButton').value.trim()||'WhatsApp-এ পাঠান',intro:$('dsAdminIntro').value.trim(),note:$('dsAdminNote').value.trim(),whatsappNumber:phone,fields,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ const btn=$('saveDirectorySuggestionConfigBtn'),status=$('dsAdminStatus');
+ try{btn.disabled=true;btn.textContent='Saving...';await db.collection('site').doc('directorySuggestionForm').set(data,{merge:true});directorySuggestionFormConfig=normalizeDirectorySuggestionConfig(data);status.textContent='Form Settings সফলভাবে Save হয়েছে।';toast('Suggestion Form Settings Saved');}
+ catch(e){status.textContent='Save হয়নি: '+e.message;toast(e.message)}
+ finally{btn.disabled=false;btn.textContent='Save Form Settings'}
+}
+function resetDirectorySuggestionFormConfig(){
+ if(!confirm('Default Form Settings ফিরিয়ে আনবেন?'))return;
+ const cfg=normalizeDirectorySuggestionConfig(DEFAULT_DIRECTORY_SUGGESTION_FORM);
+ $('dsAdminTitle').value=cfg.title;$('dsAdminButton').value=cfg.buttonText;$('dsAdminIntro').value=cfg.intro;$('dsAdminNote').value=cfg.note;$('dsAdminWhatsApp').value=cfg.whatsappNumber;
+ directorySuggestionAdminFields=cfg.fields.map(x=>({...x}));renderDirectorySuggestionAdminFields();
+}
+
 let listingControlCache=[];
 function listingNoticeAdminForm(type){
  const isPopup=type==='popup';
@@ -1140,14 +1299,14 @@ function applyDirectoryCardLayout(grid,current){
 function renderListingPageExtras(current,grid){const targetType=current.kind==='detail'?'listing':'category',targetId=current.id;db.collection('listingPageControls').where('status','==','published').get().then(snap=>{const mainId=directoryTrail[0]?.id||'';const listingId=current.kind==='detail'?(current.sourceCollection||'directoryItems')+':'+current.id:'';const docs=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>((x.targetType===targetType&&(x.targetIds||[]).includes(targetId))||(x.targetType==='main'&&(x.targetIds||[]).includes(mainId))||(x.targetType==='listing'&&(x.targetIds||[]).includes(listingId))));const notice=docs.find(x=>x.type==='notice'&&x.text);if(notice){const bar=document.createElement('div');bar.className='directory-listing-notice';bar.innerHTML=`<span>${esc(notice.text)}</span>`;grid.prepend(bar)}const popup=docs.find(x=>x.type==='popup');if(!popup)return;const key='db_listing_popup_'+popup.id+'_'+targetId;try{if(popup.frequency==='once'&&localStorage.getItem(key)==='1')return}catch(e){}if(document.querySelector('.directory-popup-backdrop'))return;const overlay=document.createElement('div');overlay.className='directory-popup-backdrop';overlay.innerHTML=`<div class="directory-popup-sheet" role="dialog" aria-modal="true">${urlOk(popup.imageUrl)?`<img src="${esc(popup.imageUrl)}" alt="">`:''}<h3>${esc(popup.title||'বিশেষ ঘোষণা')}</h3><p>${esc(popup.text||'')}</p><button class="btn primary" type="button">${esc(popup.buttonText||'ঠিক আছে')}</button></div>`;overlay.querySelector('button').onclick=()=>{if(popup.frequency==='once'){try{localStorage.setItem(key,'1')}catch(e){}}overlay.remove()};overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});document.body.appendChild(overlay)}).catch(e=>console.warn('Listing notice/popup:',e))}
 
 function adminNavigation(){
- const icons={dashboard:'▦',tools:'⚙',events:'🎉',socialYoutube:'▶',socialFacebook:'f',socialInstagram:'◎',notices:'🔔',suggestions:'✉',settings:'⚙',menuManager:'☰',heroBannerControl:'🖼',quickCardsAdmin:'▦',directoryCategoriesAdmin:'▤',directoryItemsAdmin:'📇',directDirectoryAdmin:'📂',featuredAdmin:'⭐',prideAdmin:'🏅',movingNoticeAdmin:'↔',popupNoticeAdmin:'▣'};
+ const icons={directorySuggestionFormAdmin:'＋',dashboard:'▦',tools:'⚙',events:'🎉',socialYoutube:'▶',socialFacebook:'f',socialInstagram:'◎',notices:'🔔',suggestions:'✉',settings:'⚙',menuManager:'☰',heroBannerControl:'🖼',quickCardsAdmin:'▦',directoryCategoriesAdmin:'▤',directoryItemsAdmin:'📇',directDirectoryAdmin:'📂',featuredAdmin:'⭐',prideAdmin:'🏅',movingNoticeAdmin:'↔',popupNoticeAdmin:'▣'};
  $('adminTabs').innerHTML=adminGroups.map(([group,items])=>{
    const active=items.some(([k])=>k===currentTab);
    return `<details class="admin-nav-group admin-nav-item" ${active?'open':''}><summary><span class="admin-group-title">${group}</span><span class="admin-arrow">▾</span></summary><div class="admin-nav-items">${items.map(([k,n])=>`<button type="button" class="admin-subitem ${k===currentTab?'active':''}" onclick="selectTab('${k}')"><span>${icons[k]||'•'}</span><span>${n}</span><span class="admin-sub-arrow">›</span></button>`).join('')}</div></details>`;
  }).join('');
 }
 function showAdmin(){if(!user||user.uid!==ADMIN_UID){openModal('loginModal');return}$('adminIdentity').textContent='Administrator';openModal('adminModal');adminNavigation();selectTab(currentTab)}
-function selectTab(k){currentTab=k;adminNavigation();$('adminModal').classList.add('admin-page-view');if(k==='dashboard')dashboard();else if(k==='settings')settingsForm();else if(k==='heroBannerControl')heroSliderAdminForm();else if(k==='quickCardsAdmin')quickCardsAdminForm();else if(k==='directoryCategoriesAdmin')directoryCategoriesAdminForm();else if(k==='directoryItemsAdmin')directoryItemsAdminForm();else if(k==='movingNoticeAdmin')listingNoticeAdminForm('notice');else if(k==='popupNoticeAdmin')listingNoticeAdminForm('popup');else if(k==='directDirectoryAdmin')directDirectoryAdminForm();else if(k==='featuredAdmin')featuredAdminForm();else if(k==='prideAdmin')prideAdminForm();else if(k==='menuManager')menuManagerForm();else if(k==='suggestions')suggestionsPanel();else if(k==='socialYoutube')socialAdminPanel('youtube');else if(k==='socialFacebook')socialAdminPanel('facebook');else if(k==='socialInstagram')socialAdminPanel('instagram');else if(k==='events')eventsAdminPanel();else contentPanel(k);$('adminContent').scrollTop=0}
+function selectTab(k){currentTab=k;adminNavigation();$('adminModal').classList.add('admin-page-view');if(k==='dashboard')dashboard();else if(k==='directorySuggestionFormAdmin')directorySuggestionFormAdmin();else if(k==='settings')settingsForm();else if(k==='heroBannerControl')heroSliderAdminForm();else if(k==='quickCardsAdmin')quickCardsAdminForm();else if(k==='directoryCategoriesAdmin')directoryCategoriesAdminForm();else if(k==='directoryItemsAdmin')directoryItemsAdminForm();else if(k==='movingNoticeAdmin')listingNoticeAdminForm('notice');else if(k==='popupNoticeAdmin')listingNoticeAdminForm('popup');else if(k==='directDirectoryAdmin')directDirectoryAdminForm();else if(k==='featuredAdmin')featuredAdminForm();else if(k==='prideAdmin')prideAdminForm();else if(k==='menuManager')menuManagerForm();else if(k==='suggestions')suggestionsPanel();else if(k==='socialYoutube')socialAdminPanel('youtube');else if(k==='socialFacebook')socialAdminPanel('facebook');else if(k==='socialInstagram')socialAdminPanel('instagram');else if(k==='events')eventsAdminPanel();else contentPanel(k);$('adminContent').scrollTop=0}
 function backToAdminMenu(){$('adminModal').classList.remove('admin-page-view');currentTab='dashboard';adminNavigation();dashboard()}
 function dashboard(){$('adminModal').classList.remove('admin-page-view');$('adminContent').innerHTML=`<div class="admin-card admin-welcome"><h3>DURGAPUR BUZZ Control Center</h3><p>বাম/উপরের তালিকা থেকে একটি বিভাগ খুলুন। তারপর তার নিচের ছোট অপশনে ক্লিক করলে সংশ্লিষ্ট ফর্ম এখানে দেখা যাবে।</p><p class="admin-hint">প্রথমে Parent Category → তারপর Submenu → তারপর Form।</p></div>`}
 function contentPanel(k){let sec=sections[k];if(!sec){$('adminContent').innerHTML='<div class="admin-card">Coming soon</div>';return}let arr=cache[k]||[];$('adminContent').innerHTML=`<div class="admin-card"><div class="admin-page-toolbar"><button class="btn admin-back" type="button" onclick="backToAdminMenu()">← সব মেনু</button><h3>${sec.label} Management</h3></div><p style="color:var(--muted)">Add, edit, publish, hide বা delete করুন। সব পরিবর্তন Firebase-এ সেভ হবে।</p><div class="formgrid"><div class="field"><label>Title *</label><input id="fTitle" placeholder="নাম / শিরোনাম"></div><div class="field"><label>Category</label><input id="fCategory" placeholder="যেমন: Hospital, Education"></div><div class="field span2"><label>Description</label><textarea id="fDescription" placeholder="বিস্তারিত লিখুন"></textarea></div><div class="field"><label>Website / External URL</label><input id="fUrl" placeholder="https://..."></div><div class="field"><label>File URL (PDF / Download)</label><input id="fFileUrl" placeholder="https://..."></div><div class="field"><label>লিংক কোথায় খুলবে?</label><select id="fOpenMode"><option value="external">External Browser / নতুন Tab</option><option value="internal">নিজের Website-এর ভিতরে</option></select><small>Internal হলে লিংক URL দেখাবে না; সাইটের ভিতরে Viewer খুলবে।</small></div><div class="field"><label>Image URL</label><input id="fImageUrl" placeholder="https://..."></div><div class="field"><label>Icon / Emoji</label><input id="fIcon" placeholder="📄"></div><div class="field"><label>Card Color Palette</label><select id="fCardPalette"><option value="none">Default / White</option><option value="blue">Blue → Violet</option><option value="teal">Teal → Blue</option><option value="purple">Purple → Pink</option><option value="orange">Red → Orange</option><option value="green">Green Gradient</option><option value="indigo">Royal Blue → Violet</option><option value="red">Crimson → Orange</option></select><small>এই item/card-এর রং আলাদাভাবে বেছে নিন।</small></div><div class="field"><label>Corner Ribbon Text</label><input id="fRibbonText" placeholder="FREE TOOL / NEW / POPULAR"></div><div class="field"><label>Phone</label><input id="fPhone" placeholder="যোগাযোগ নম্বর"></div><div class="field"><label>Address / Date label</label><input id="fAddress" placeholder="ঠিকানা বা তারিখ"></div><div class="field"><label>Status</label><select id="fStatus"><option value="published">Published</option><option value="draft">Draft</option><option value="hidden">Hidden</option></select></div><div class="field"><label>Featured</label><select id="fFeatured"><option value="false">No</option><option value="true">Yes</option></select></div></div><button id="saveItemBtn" type="button" class="btn primary" onclick="saveItem('${k}')">Save / Publish</button> <button class="btn ghost" onclick="clearItemForm()">Clear</button><input type="hidden" id="fEditId"><p id="formStatus" style="color:var(--green)"></p></div><div class="admin-card"><h3>Existing ${sec.label}</h3><div id="itemsList">${arr.length?arr.map(x=>adminRow(k,x)).join(''):'<p style="color:var(--muted)">কোনো item নেই।</p>'}</div></div>`}
